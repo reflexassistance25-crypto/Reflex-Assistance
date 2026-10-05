@@ -17,7 +17,7 @@ import {
   Sparkles,
   Wrench,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import logoAsset from "@/assets/reflex-assistance-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
@@ -64,9 +64,27 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [openFaq, setOpenFaq] = useState(0);
 
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <main className="overflow-hidden bg-background text-foreground">
-      <header className="fixed left-1/2 top-4 z-50 flex h-14 w-[min(94%,780px)] -translate-x-1/2 items-center justify-between rounded-full border border-border/70 bg-card/95 px-3 shadow-float backdrop-blur-xl md:top-6 md:px-4">
+      <header className="nav-enter fixed left-1/2 top-4 z-50 flex h-14 w-[min(94%,780px)] -translate-x-1/2 items-center justify-between rounded-full border border-border/70 bg-card/95 px-3 shadow-float backdrop-blur-xl md:top-6 md:px-4">
         <a href="#accueil" aria-label="Retour à l’accueil" className="flex min-w-0 items-center">
           <img src={logoAsset.url} alt="Reflex Assistance" className="h-9 w-auto max-w-[148px] object-contain md:max-w-[185px]" />
         </a>
@@ -76,22 +94,22 @@ function Index() {
           <a className="transition-colors hover:text-brand" href="#apropos">À propos</a>
           <a className="transition-colors hover:text-brand" href="#faq">FAQ</a>
         </nav>
-        <Button asChild className="h-10 rounded-full bg-ink px-3 text-ink-foreground shadow-button hover:bg-ink/85 md:px-5">
+        <Button asChild className="action-motion h-10 rounded-full bg-ink px-3 text-ink-foreground shadow-button hover:bg-ink/85 md:px-5">
           <a href="tel:+33782275430"><span className="hidden sm:inline">Nous appeler</span><Phone className="sm:hidden" /><span className="flex size-6 items-center justify-center rounded-full bg-card text-ink"><ArrowRight /></span></a>
         </Button>
       </header>
 
       <section id="accueil" className="paper-grid relative min-h-[790px] px-5 pb-16 pt-32 md:min-h-[880px] md:pt-40">
         <div className="mx-auto grid max-w-6xl items-center gap-14 md:grid-cols-[0.9fr_1.1fr] md:gap-8">
-          <div className="relative z-10">
+          <div className="hero-copy relative z-10">
             <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold uppercase text-muted-foreground shadow-sm"><MapPin className="size-3.5 text-brand" />Nanterre & Hauts-de-Seine</p>
             <h1 className="max-w-xl text-5xl font-medium leading-[0.98] text-ink sm:text-6xl lg:text-[4.8rem]">Dépannage informatique, simplement.</h1>
             <p className="mt-7 max-w-lg text-base leading-7 text-muted-foreground md:text-lg">Un technicien joignable rapidement pour particuliers et petites entreprises. Intervention à domicile, au bureau ou à distance.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="h-12 rounded-full bg-ink px-5 text-ink-foreground shadow-button hover:bg-ink/85">
+              <Button asChild size="lg" className="action-motion h-12 rounded-full bg-ink px-5 text-ink-foreground shadow-button hover:bg-ink/85">
                 <a href="tel:+33782275430">Appeler maintenant <span className="flex size-7 items-center justify-center rounded-full bg-card text-ink"><ArrowRight /></span></a>
               </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 rounded-full border-ink bg-transparent px-5 shadow-none hover:bg-card">
+              <Button asChild variant="outline" size="lg" className="action-motion h-12 rounded-full border-ink bg-transparent px-5 shadow-none hover:bg-card">
                 <a href="#contact">Devis gratuit</a>
               </Button>
             </div>
@@ -101,12 +119,12 @@ function Index() {
             </div>
           </div>
 
-          <div className="relative mx-auto h-[390px] w-full max-w-[600px] md:h-[470px]">
-            <div className="absolute left-2 top-1 w-[85%] rotate-[2deg] rounded-[28px] border border-border bg-card p-5 shadow-panel md:left-8 md:p-7">
+          <div className="hero-visual relative mx-auto h-[390px] w-full max-w-[600px] md:h-[470px]">
+            <div className="float-card-primary absolute left-2 top-1 w-[85%] rotate-[2deg] rounded-[28px] border border-border bg-card p-5 shadow-panel md:left-8 md:p-7">
               <div className="mb-6 flex items-center justify-between"><span className="font-semibold">Votre assistance</span><span className="text-xs text-muted-foreground">Diagnostic rapide</span></div>
               <div className="space-y-3">
                 {[{ icon: Laptop, name: "Ordinateur", color: "bg-highlight" }, { icon: Router, name: "Connexion Wi-Fi", color: "bg-soft-blue" }, { icon: Printer, name: "Périphériques", color: "bg-soft-green" }].map((item, index) => (
-                  <div key={item.name} className={`flex items-center gap-3 rounded-2xl ${item.color} p-3.5`}>
+                  <div key={item.name} className={`service-chip flex items-center gap-3 rounded-2xl ${item.color} p-3.5`}>
                     <div className="flex size-10 items-center justify-center rounded-full bg-card"><item.icon className="size-5" /></div>
                     <div className="min-w-0 flex-1"><p className="text-sm font-semibold">{item.name}</p><p className="text-xs text-muted-foreground">{index === 0 ? "Diagnostic et dépannage" : index === 1 ? "Configuration sécurisée" : "Installation et prise en main"}</p></div>
                     <Check className="size-5" />
@@ -114,38 +132,38 @@ function Index() {
                 ))}
               </div>
             </div>
-            <div className="absolute bottom-0 right-0 w-[62%] -rotate-[3deg] rounded-[25px] border border-border bg-card p-5 shadow-panel md:p-6">
+            <div className="float-card-secondary absolute bottom-0 right-0 w-[62%] -rotate-[3deg] rounded-[25px] border border-border bg-card p-5 shadow-panel md:p-6">
               <div className="mb-7 flex items-start justify-between"><div><p className="text-xs text-muted-foreground">Intervention</p><p className="mt-1 text-3xl font-semibold">Sur mesure</p></div><div className="rounded-full bg-soft-green p-2"><Wrench className="size-5 text-brand" /></div></div>
-              <div className="flex h-24 items-end gap-2" aria-hidden="true">{[42, 70, 54, 86, 63, 92, 76].map((height, index) => <div key={height} className={`flex-1 rounded-t-md ${index % 2 ? "bg-brand" : "bg-highlight"}`} style={{ height: `${height}%` }} />)}</div>
+              <div className="flex h-24 items-end gap-2" aria-hidden="true">{[42, 70, 54, 86, 63, 92, 76].map((height, index) => <div key={height} className={`meter-bar flex-1 rounded-t-md ${index % 2 ? "bg-brand" : "bg-highlight"}`} style={{ height: `${height}%` }} />)}</div>
               <div className="mt-3 flex justify-between text-[10px] text-muted-foreground"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
             </div>
           </div>
         </div>
-        <div className="mx-auto mt-16 flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4 border-y border-border/60 py-6 text-sm font-semibold text-muted-foreground/65 md:mt-12 md:text-base">
+        <div className="trust-strip mx-auto mt-16 flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4 border-y border-border/60 py-6 text-sm font-semibold text-muted-foreground/65 md:mt-12 md:text-base">
           <span className="flex items-center gap-2"><Laptop className="size-5" />PC & Mac</span><span className="flex items-center gap-2"><HardDrive className="size-5" />Données</span><span className="flex items-center gap-2"><Router className="size-5" />Réseau</span><span className="flex items-center gap-2"><ShieldCheck className="size-5" />Sécurité</span><span className="flex items-center gap-2"><Printer className="size-5" />Équipements</span>
         </div>
       </section>
 
       <section className="bg-ink px-5 py-24 text-ink-foreground md:py-32">
-        <div className="mx-auto max-w-6xl">
+        <div data-reveal className="reveal-section mx-auto max-w-6xl">
           <div className="mb-14 grid gap-5 md:grid-cols-2 md:items-end"><h2 className="text-4xl font-medium leading-tight md:text-6xl">Un problème de ce type&nbsp;?</h2><p className="max-w-lg text-base leading-7 text-ink-muted md:justify-self-end">Nous remettons vos outils en état sans jargon inutile, avec une solution claire et adaptée.</p></div>
-          <div className="grid gap-px overflow-hidden rounded-2xl bg-ink-border sm:grid-cols-2 lg:grid-cols-3">
-            {problems.map((problem) => <article key={problem.title} className="group min-h-52 bg-ink p-7 transition-colors hover:bg-ink-soft"><problem.icon className="mb-10 size-7 text-highlight" /><h3 className="text-lg font-semibold">{problem.title}</h3><p className="mt-3 text-sm leading-6 text-ink-muted">{problem.text}</p></article>)}
+          <div className="stagger-grid grid gap-px overflow-hidden rounded-2xl bg-ink-border sm:grid-cols-2 lg:grid-cols-3">
+            {problems.map((problem) => <article key={problem.title} className="group min-h-52 bg-ink p-7 transition-colors hover:bg-ink-soft"><problem.icon className="mb-10 size-7 text-highlight transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" /><h3 className="text-lg font-semibold">{problem.title}</h3><p className="mt-3 text-sm leading-6 text-ink-muted">{problem.text}</p></article>)}
           </div>
         </div>
       </section>
 
       <section id="services" className="px-5 py-24 md:py-32">
-        <div className="mx-auto max-w-6xl">
+        <div data-reveal className="reveal-section mx-auto max-w-6xl">
           <div className="max-w-3xl"><p className="eyebrow">Nos services</p><h2 className="mt-5 text-4xl font-medium leading-tight md:text-6xl">Tout ce qu’il faut pour rester connecté.</h2><p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">Du dépannage ponctuel au suivi de votre parc, Reflex’ Assistance vous accompagne à chaque étape.</p></div>
           <div className="mt-16 border-t border-border">
-            {services.map((service) => <article key={service.number} className="grid gap-4 border-b border-border py-8 md:grid-cols-[100px_1fr_1fr] md:items-start"><span className="text-sm font-semibold text-brand">{service.number}</span><h3 className="text-2xl font-medium">{service.title}</h3><p className="max-w-lg leading-7 text-muted-foreground">{service.text}</p></article>)}
+            {services.map((service) => <article key={service.number} className="service-row grid gap-4 border-b border-border py-8 md:grid-cols-[100px_1fr_1fr] md:items-start"><span className="text-sm font-semibold text-brand">{service.number}</span><h3 className="text-2xl font-medium">{service.title}</h3><p className="max-w-lg leading-7 text-muted-foreground">{service.text}</p></article>)}
           </div>
         </div>
       </section>
 
       <section id="tarifs" className="bg-mist px-5 py-24 md:py-32">
-        <div className="mx-auto max-w-6xl">
+        <div data-reveal className="reveal-section mx-auto max-w-6xl">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
             <div className="lg:sticky lg:top-28"><p className="eyebrow">Des tarifs clairs</p><h2 className="mt-5 text-4xl font-medium leading-tight md:text-6xl">Le prix est annoncé avant toute intervention.</h2><p className="mt-6 text-lg text-muted-foreground">Aucune surprise.</p></div>
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-panel">
@@ -157,8 +175,8 @@ function Index() {
       </section>
 
       <section className="px-5 py-24 md:py-32">
-        <div className="mx-auto max-w-6xl"><p className="eyebrow">Comment ça marche</p><h2 className="mt-5 max-w-3xl text-4xl font-medium leading-tight md:text-6xl">Une prise en charge simple, du premier appel à la solution.</h2>
-          <div className="mt-16 grid gap-10 md:grid-cols-4">{[
+        <div data-reveal className="reveal-section mx-auto max-w-6xl"><p className="eyebrow">Comment ça marche</p><h2 className="mt-5 max-w-3xl text-4xl font-medium leading-tight md:text-6xl">Une prise en charge simple, du premier appel à la solution.</h2>
+          <div className="stagger-grid mt-16 grid gap-10 md:grid-cols-4">{[
             ["01", "Vous nous contactez", "Par téléphone ou via le formulaire."],
             ["02", "Diagnostic et tarif", "Nous établissons un diagnostic et annonçons le prix."],
             ["03", "Nous intervenons", "À domicile, au bureau ou à distance."],
@@ -168,17 +186,17 @@ function Index() {
       </section>
 
       <section id="apropos" className="bg-soft-green px-5 py-24 md:py-32">
-        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <div className="relative min-h-[420px] overflow-hidden rounded-[28px] bg-ink p-8 text-ink-foreground shadow-panel md:p-12"><div className="absolute -bottom-24 -right-20 size-80 rounded-full border-[54px] border-brand/60" /><div className="absolute right-14 top-12 size-20 rounded-full bg-highlight" /><img src={logoAsset.url} alt="Reflex Assistance" className="relative z-10 h-16 w-auto rounded-md bg-card p-2" /><div className="absolute bottom-10 left-8 z-10 md:left-12"><p className="text-sm text-ink-muted">Votre expert de proximité</p><p className="mt-2 text-3xl font-medium">Nanterre<br />& Hauts-de-Seine</p></div></div>
+        <div data-reveal className="reveal-section mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <div className="about-visual relative min-h-[420px] overflow-hidden rounded-[28px] bg-ink p-8 text-ink-foreground shadow-panel md:p-12"><div className="orbit-ring absolute -bottom-24 -right-20 size-80 rounded-full border-[54px] border-brand/60" /><div className="orbit-dot absolute right-14 top-12 size-20 rounded-full bg-highlight" /><img src={logoAsset.url} alt="Reflex Assistance" className="relative z-10 h-16 w-auto rounded-md bg-card p-2" /><div className="absolute bottom-10 left-8 z-10 md:left-12"><p className="text-sm text-ink-muted">Votre expert de proximité</p><p className="mt-2 text-3xl font-medium">Nanterre<br />& Hauts-de-Seine</p></div></div>
           <div><p className="eyebrow">Qui sommes-nous ?</p><h2 className="mt-5 text-4xl font-medium leading-tight md:text-6xl">Une assistance rapide, honnête et expliquée simplement.</h2><p className="mt-7 text-lg leading-8 text-muted-foreground">Reflex’ Assistance accompagne les particuliers et les petites structures pour garder leurs équipements informatiques performants et fiables.</p><p className="mt-5 leading-7 text-muted-foreground"><strong className="text-foreground">Zone d’intervention :</strong> Nanterre et les Hauts-de-Seine. À distance partout en France.</p><Button asChild className="mt-8 h-12 rounded-full bg-ink px-5 text-ink-foreground hover:bg-ink/85"><a href="#contact">Parler à un technicien <ArrowRight /></a></Button></div>
         </div>
       </section>
 
-      <section className="px-5 py-24 md:py-32"><div className="mx-auto max-w-6xl"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="eyebrow">Avis clients</p><h2 className="mt-5 text-4xl font-medium md:text-6xl">Votre confiance compte.</h2></div><p className="max-w-sm leading-7 text-muted-foreground">Les témoignages vérifiés de nos clients seront bientôt disponibles ici.</p></div><div className="mt-14 grid gap-5 md:grid-cols-3">{["Intervention claire", "Conseils adaptés", "Suivi de proximité"].map((title, index) => <div key={title} className={`min-h-64 rounded-2xl border border-border p-7 ${index === 1 ? "bg-highlight" : "bg-card"}`}><div className="mb-16 flex gap-1">{Array.from({ length: 5 }).map((_, star) => <span key={star} className="text-lg">★</span>)}</div><h3 className="text-xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">Témoignage client à venir.</p></div>)}</div></div></section>
+      <section className="px-5 py-24 md:py-32"><div data-reveal className="reveal-section mx-auto max-w-6xl"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="eyebrow">Avis clients</p><h2 className="mt-5 text-4xl font-medium md:text-6xl">Votre confiance compte.</h2></div><p className="max-w-sm leading-7 text-muted-foreground">Les témoignages vérifiés de nos clients seront bientôt disponibles ici.</p></div><div className="stagger-grid mt-14 grid gap-5 md:grid-cols-3">{["Intervention claire", "Conseils adaptés", "Suivi de proximité"].map((title, index) => <div key={title} className={`review-card min-h-64 rounded-2xl border border-border p-7 ${index === 1 ? "bg-highlight" : "bg-card"}`}><div className="mb-16 flex gap-1">{Array.from({ length: 5 }).map((_, star) => <span key={star} className="text-lg">★</span>)}</div><h3 className="text-xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">Témoignage client à venir.</p></div>)}</div></div></section>
 
-      <section id="faq" className="bg-ink px-5 py-24 text-ink-foreground md:py-32"><div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-[0.75fr_1.25fr]"><div><p className="eyebrow text-highlight">Questions fréquentes</p><h2 className="mt-5 text-4xl font-medium leading-tight md:text-6xl">Vos questions, nos réponses.</h2><Button asChild variant="outline" className="mt-8 h-11 rounded-full border-ink-border bg-transparent px-5 text-ink-foreground hover:bg-ink-soft hover:text-ink-foreground"><a href="#contact">Nous contacter</a></Button></div><div className="border-t border-ink-border">{faqs.map((faq, index) => <div key={faq.question} className="border-b border-ink-border"><button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="flex w-full items-center justify-between gap-4 py-6 text-left font-semibold" aria-expanded={openFaq === index}><span>{faq.question}</span><ChevronDown className={`size-5 shrink-0 transition-transform ${openFaq === index ? "rotate-180" : ""}`} /></button>{openFaq === index && <p className="max-w-2xl pb-6 pr-8 text-sm leading-7 text-ink-muted">{faq.answer}</p>}</div>)}</div></div></section>
+      <section id="faq" className="bg-ink px-5 py-24 text-ink-foreground md:py-32"><div data-reveal className="reveal-section mx-auto grid max-w-6xl gap-14 lg:grid-cols-[0.75fr_1.25fr]"><div><p className="eyebrow text-highlight">Questions fréquentes</p><h2 className="mt-5 text-4xl font-medium leading-tight md:text-6xl">Vos questions, nos réponses.</h2><Button asChild variant="outline" className="action-motion mt-8 h-11 rounded-full border-ink-border bg-transparent px-5 text-ink-foreground hover:bg-ink-soft hover:text-ink-foreground"><a href="#contact">Nous contacter</a></Button></div><div className="border-t border-ink-border">{faqs.map((faq, index) => <div key={faq.question} className="border-b border-ink-border"><button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="flex w-full items-center justify-between gap-4 py-6 text-left font-semibold" aria-expanded={openFaq === index}><span>{faq.question}</span><ChevronDown className={`size-5 shrink-0 transition-transform ${openFaq === index ? "rotate-180" : ""}`} /></button>{openFaq === index && <p className="faq-answer max-w-2xl pb-6 pr-8 text-sm leading-7 text-ink-muted">{faq.answer}</p>}</div>)}</div></div></section>
 
-      <section id="contact" className="paper-grid px-5 py-24 md:py-32"><div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-2"><div><p className="eyebrow">Contact</p><h2 className="mt-5 max-w-lg text-5xl font-medium leading-tight md:text-7xl">Besoin d’aide avec votre informatique&nbsp;?</h2><p className="mt-7 max-w-lg text-lg leading-8 text-muted-foreground">Contactez Reflex’ Assistance et profitez d’un service rapide, fiable et personnalisé.</p><div className="mt-10 space-y-4"><a className="flex items-center gap-4 text-lg font-semibold hover:text-brand" href="tel:+33782275430"><span className="flex size-11 items-center justify-center rounded-full bg-ink text-ink-foreground"><Phone /></span>07 82 27 54 30</a><p className="flex items-start gap-4 text-muted-foreground"><span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card shadow-sm"><MapPin className="size-5" /></span><span className="pt-2">59 rue de Ponthieu, Bureau 326<br />75008 Paris</span></p><p className="flex items-center gap-4 text-muted-foreground"><span className="flex size-11 items-center justify-center rounded-full bg-card shadow-sm"><Clock3 className="size-5" /></span>Intervention sur rendez-vous</p></div></div>
+      <section id="contact" className="paper-grid px-5 py-24 md:py-32"><div data-reveal className="reveal-section mx-auto grid max-w-6xl gap-14 lg:grid-cols-2"><div><p className="eyebrow">Contact</p><h2 className="mt-5 max-w-lg text-5xl font-medium leading-tight md:text-7xl">Besoin d’aide avec votre informatique&nbsp;?</h2><p className="mt-7 max-w-lg text-lg leading-8 text-muted-foreground">Contactez Reflex’ Assistance et profitez d’un service rapide, fiable et personnalisé.</p><div className="mt-10 space-y-4"><a className="contact-link flex items-center gap-4 text-lg font-semibold hover:text-brand" href="tel:+33782275430"><span className="flex size-11 items-center justify-center rounded-full bg-ink text-ink-foreground"><Phone /></span>07 82 27 54 30</a><p className="flex items-start gap-4 text-muted-foreground"><span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card shadow-sm"><MapPin className="size-5" /></span><span className="pt-2">59 rue de Ponthieu, Bureau 326<br />75008 Paris</span></p><p className="flex items-center gap-4 text-muted-foreground"><span className="flex size-11 items-center justify-center rounded-full bg-card shadow-sm"><Clock3 className="size-5" /></span>Intervention sur rendez-vous</p></div></div>
           <form className="rounded-[28px] border border-border bg-card p-6 shadow-panel md:p-9" onSubmit={(event) => event.preventDefault()}><div className="grid gap-5 sm:grid-cols-2"><label className="text-sm font-medium">Prénom<input required className="mt-2 h-12 w-full rounded-lg border border-input bg-background px-4 outline-none transition-shadow focus:ring-2 focus:ring-ring" /></label><label className="text-sm font-medium">E-mail<input required type="email" className="mt-2 h-12 w-full rounded-lg border border-input bg-background px-4 outline-none transition-shadow focus:ring-2 focus:ring-ring" /></label></div><label className="mt-5 block text-sm font-medium">Téléphone<input type="tel" className="mt-2 h-12 w-full rounded-lg border border-input bg-background px-4 outline-none transition-shadow focus:ring-2 focus:ring-ring" /></label><label className="mt-5 block text-sm font-medium">Votre problème<textarea required rows={5} className="mt-2 w-full resize-none rounded-lg border border-input bg-background p-4 outline-none transition-shadow focus:ring-2 focus:ring-ring" /></label><label className="mt-5 flex items-start gap-3 text-xs leading-5 text-muted-foreground"><input required type="checkbox" className="mt-1 size-4 accent-current" />J’accepte que mes données soient utilisées pour répondre à ma demande.</label><Button type="submit" className="mt-6 h-12 w-full rounded-full bg-ink text-ink-foreground hover:bg-ink/85">Envoyer la demande <Mail /></Button></form>
         </div></section>
 
