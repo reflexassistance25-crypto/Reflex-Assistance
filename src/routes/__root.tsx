@@ -78,19 +78,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Reflex’ Assistance" },
-      { name: "description", content: "Services informatiques à Nanterre pour particuliers et petites entreprises." },
-      { name: "author", content: "Reflex’ Assistance" },
-      { property: "og:title", content: "Reflex’ Assistance" },
-      { property: "og:description", content: "Services informatiques à Nanterre pour particuliers et petites entreprises." },
+      { title: "Reflex' Assistance — Dépannage informatique à Nanterre & Hauts-de-Seine" },
+      { name: "description", content: "Dépannage informatique à domicile, en entreprise ou à distance à Nanterre (92) et Paris. Réparation PC & Mac, virus, réseaux Wi-Fi et récupération de données." },
+      { name: "keywords", content: "dépannage informatique nanterre, réparation ordinateur hauts-de-seine, assistance informatique domicile 92, dépannage pc mac paris, récupération données disque dur, installation wifi entreprise" },
+      { name: "author", content: "Reflex' Assistance" },
+      { name: "robots", content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" },
+      { name: "geo.region", content: "FR-92" },
+      { name: "geo.placename", content: "Nanterre" },
+      { name: "geo.position", content: "48.8924;2.2071" },
+      { name: "ICBM", content: "48.8924, 2.2071" },
+      { property: "og:site_name", content: "Reflex' Assistance" },
+      { property: "og:locale", content: "fr_FR" },
+      { property: "og:title", content: "Reflex' Assistance — Dépannage informatique à Nanterre" },
+      { property: "og:description", content: "Dépannage rapide pour particuliers et professionnels. À domicile, au bureau ou à distance. Prix annoncé avant intervention." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://reflexassistance.fr/" },
+      { property: "og:image", content: "https://reflexassistance.fr/reflex-assistance-logo.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Reflex' Assistance — Dépannage informatique" },
+      { name: "twitter:description", content: "Technicien informatique à Nanterre et Hauts-de-Seine. Domicile & distance." },
+      { name: "twitter:image", content: "https://reflexassistance.fr/reflex-assistance-logo.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "canonical", href: "https://reflexassistance.fr/" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" },
@@ -103,11 +117,57 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const schemaOrgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ComputerRepairService",
+  "name": "Reflex' Assistance",
+  "image": "https://reflexassistance.fr/reflex-assistance-logo.png",
+  "@id": "https://reflexassistance.fr",
+  "url": "https://reflexassistance.fr",
+  "telephone": "+33782275430",
+  "priceRange": "€€",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "59 rue de Ponthieu, Bureau 326",
+    "addressLocality": "Paris",
+    "postalCode": "75008",
+    "addressCountry": "FR"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 48.8924,
+    "longitude": 2.2071
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      "opens": "09:00",
+      "closes": "19:00"
+    }
+  ],
+  "areaServed": [
+    { "@type": "City", "name": "Nanterre" },
+    { "@type": "AdministrativeArea", "name": "Hauts-de-Seine" },
+    { "@type": "City", "name": "Paris" },
+    { "@type": "Country", "name": "France" }
+  ],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "48"
+  }
+};
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrgJsonLd) }}
+        />
       </head>
       <body>
         {children}
@@ -119,6 +179,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Initialisation automatique de Google Analytics si configuré
+  useEffect(() => {
+    try {
+      const gaId = localStorage.getItem("reflex_ga_measurement_id");
+      if (gaId) {
+        import("../lib/analytics").then(({ initGoogleAnalytics }) => {
+          initGoogleAnalytics(gaId);
+        });
+      }
+    } catch (e) {
+      // Ignorer si local storage non accessible
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
