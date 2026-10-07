@@ -233,11 +233,56 @@ function AdminDashboardInner() {
     notifyMedia(`Photo "${title}" supprimée`);
   };
 
+  const handleToggleReview = (id: string) => {
+    const updated = reviews.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r));
+    setReviews(updated);
+    saveStoredReviews(updated);
+    notifyMedia("Visibilité de l'avis mise à jour !");
+  };
+
+  const handleDeleteReview = (id: string, author: string) => {
+    if (!window.confirm(`Supprimer l'avis de "${author}" ?`)) return;
+    const updated = reviews.filter((r) => r.id !== id);
+    setReviews(updated);
+    saveStoredReviews(updated);
+    notifyMedia(`Avis de "${author}" supprimé !`);
+  };
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewAuthor.trim() || !newReviewComment.trim()) {
+      notifyMedia("Veuillez renseigner l'auteur et le commentaire.", "error");
+      return;
+    }
+    const newRev: ClientReview = {
+      id: `rev-${Date.now()}`,
+      author: newReviewAuthor.trim(),
+      roleOrLocation: newReviewRole.trim() || "Client vérifié · Nanterre",
+      rating: newReviewRating,
+      title: newReviewTitle.trim() || "Témoignage client",
+      comment: newReviewComment.trim(),
+      date: "Récent",
+      enabled: true,
+    };
+    const updated = [newRev, ...reviews];
+    setReviews(updated);
+    saveStoredReviews(updated);
+    setNewReviewAuthor("");
+    setNewReviewRole("");
+    setNewReviewRating(5);
+    setNewReviewTitle("");
+    setNewReviewComment("");
+    notifyMedia(`Avis de "${newRev.author}" publié avec succès !`);
+  };
+
   const handleResetMedia = () => {
-    if (!window.confirm("Réinitialiser tous les médias ?")) return;
+    if (!window.confirm("Réinitialiser tous les médias et avis aux valeurs d'origine ?")) return;
     resetMediaToDefaults();
-    setLogos(getStoredLogos()); setPhotos(getStoredPhotos()); setMediaSettings(getMediaSettings());
-    notifyMedia("Médias réinitialisés");
+    setLogos(getStoredLogos());
+    setPhotos(getStoredPhotos());
+    setReviews(getStoredReviews());
+    setMediaSettings(getMediaSettings());
+    notifyMedia("Médias et avis réinitialisés");
   };
 
   const handleToggleSection = (key: keyof MediaSettings, value: boolean | number) => {
@@ -541,30 +586,31 @@ function AdminDashboardInner() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800/80">
                 <div>
                   <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2"><SlidersHorizontal className="size-4 text-emerald-400" /> Visibilité des sections</h2>
-                  <p className="text-xs text-slate-400 mt-1">Activez ou masquez Logos et Galerie sur la page d'accueil.</p>
+                  <p className="text-xs text-slate-400 mt-1">Activez ou masquez les sections Logos, Galerie et Avis Clients sur la page d'accueil.</p>
                 </div>
                 <Link to="/galerie" target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 rounded-lg hover:bg-emerald-900/60 transition-colors w-fit">
                   <ExternalLink className="size-3.5" /> Page Galerie ↗
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 mt-5">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-5">
                 {[
-                  { key: "showLogosSection" as keyof MediaSettings, label: "Logos & Marques Partenaires", sub: "Section 1 · Accueil", desc: "Bandeau des logos constructeurs (Apple, Dell, Microsoft...)." },
-                  { key: "showGallerySection" as keyof MediaSettings, label: "Galerie Réalisations", sub: "Section 2 · Accueil", desc: "Aperçu compact avec redirection vers la page dédiée." },
+                  { key: "showLogosSection" as keyof MediaSettings, label: "Logos & Marques", sub: "Section 1 · Accueil", desc: "Bandeau constructeurs (Apple, Dell, Microsoft...)." },
+                  { key: "showGallerySection" as keyof MediaSettings, label: "Galerie Réalisations", sub: "Section 2 · Accueil", desc: "Aperçu compact avec lien vers la page complète." },
+                  { key: "showReviewsSection" as keyof MediaSettings, label: "Avis Clients", sub: "Section 3 · Accueil", desc: "Témoignages vérifiés et notes avec 5 étoiles." },
                 ].map(({ key, label, sub, desc }) => {
                   const isOn = mediaSettings[key] as boolean;
                   return (
-                    <div key={key} className={`p-4 rounded-xl border transition-all ${isOn ? "bg-slate-800/40 border-slate-700/80" : "bg-slate-950/60 border-slate-800/80"}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
+                    <div key={key} className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${isOn ? "bg-slate-800/40 border-slate-700/80" : "bg-slate-950/60 border-slate-800/80"}`}>
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{sub}</span>
-                          <h3 className="text-sm font-semibold text-white mt-0.5">{label}</h3>
-                          <p className="text-xs text-slate-400 mt-1">{desc}</p>
+                          <button type="button" onClick={() => handleToggleSection(key, !isOn)}
+                            className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${isOn ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
+                            {isOn ? <><Eye className="size-3 text-emerald-400" /> Actif</> : <><EyeOff className="size-3" /> Masqué</>}
+                          </button>
                         </div>
-                        <button type="button" onClick={() => handleToggleSection(key, !isOn)}
-                          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${isOn ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
-                          {isOn ? <><Eye className="size-3.5 text-emerald-400" /> Visible</> : <><EyeOff className="size-3.5" /> Masqué</>}
-                        </button>
+                        <h3 className="text-sm font-semibold text-white mt-1.5">{label}</h3>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{desc}</p>
                       </div>
                       {key === "showGallerySection" && isOn && (
                         <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between">
@@ -586,12 +632,15 @@ function AdminDashboardInner() {
             </div>
 
             {/* Subtabs */}
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
               <button type="button" onClick={() => setMediaSubTab("logos")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mediaSubTab === "logos" ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"}`}>
                 <Layers className="size-4 text-emerald-400" /> Logos ({logos.filter((l) => l.enabled).length}/{logos.length})
               </button>
               <button type="button" onClick={() => setMediaSubTab("photos")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mediaSubTab === "photos" ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"}`}>
                 <Camera className="size-4 text-emerald-400" /> Photos ({photos.filter((p) => p.enabled).length}/{photos.length})
+              </button>
+              <button type="button" onClick={() => setMediaSubTab("reviews")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${mediaSubTab === "reviews" ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"}`}>
+                <MessageSquareQuote className="size-4 text-emerald-400" /> Avis Clients ({reviews.filter((r) => r.enabled).length}/{reviews.length})
               </button>
             </div>
 
@@ -738,6 +787,145 @@ function AdminDashboardInner() {
                               {photo.enabled ? "Affichée" : "Masquée"}
                             </button>
                             <button type="button" onClick={() => handleDeletePhoto(photo.id, photo.title)} className="p-1.5 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors">
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AVIS CLIENTS */}
+            {mediaSubTab === "reviews" && (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <Plus className="size-4 text-emerald-400" /> Ajouter un avis client
+                  </h3>
+                  <form onSubmit={handleAddReview} className="mt-5 space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Nom du client *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newReviewAuthor}
+                          onChange={(e) => setNewReviewAuthor(e.target.value)}
+                          placeholder="Ex: Marc D., Sophie L."
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Profil ou Ville</label>
+                        <input
+                          type="text"
+                          value={newReviewRole}
+                          onChange={(e) => setNewReviewRole(e.target.value)}
+                          placeholder="Ex: Particulier · Nanterre"
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Note</label>
+                        <div className="flex items-center gap-1.5 h-10 px-3 rounded-lg bg-slate-950 border border-slate-800">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setNewReviewRating(star)}
+                              className="text-lg transition-transform hover:scale-120 cursor-pointer"
+                            >
+                              <span className={star <= newReviewRating ? "text-amber-400" : "text-slate-600"}>★</span>
+                            </button>
+                          ))}
+                          <span className="text-xs font-semibold text-slate-300 ml-2">{newReviewRating}/5</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Titre du retour</label>
+                      <input
+                        type="text"
+                        value={newReviewTitle}
+                        onChange={(e) => setNewReviewTitle(e.target.value)}
+                        placeholder="Ex: Intervention rapide et efficace"
+                        className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Témoignage du client *</label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        placeholder="Commentaire ou retour d'expérience du client après l'intervention..."
+                        className="w-full p-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-colors cursor-pointer"
+                      >
+                        <Plus className="size-4" /> Publier l'avis client
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {reviews.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-200 mb-3">Avis enregistrés ({reviews.length})</h3>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {reviews.map((rev) => (
+                        <div
+                          key={rev.id}
+                          className={`rounded-xl border p-5 flex flex-col justify-between transition-all ${
+                            rev.enabled ? "bg-slate-900/80 border-slate-800" : "bg-slate-950/50 border-slate-900 opacity-60"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className="flex gap-1 text-amber-400 text-base">
+                                {Array.from({ length: rev.rating || 5 }).map((_, i) => (
+                                  <span key={i}>★</span>
+                                ))}
+                              </div>
+                              {rev.date && <span className="text-[10px] text-slate-500">{rev.date}</span>}
+                            </div>
+                            <h4 className="text-sm font-semibold text-slate-100">{rev.title}</h4>
+                            <p className="mt-1.5 text-xs text-slate-300 leading-relaxed italic">« {rev.comment} »</p>
+                            <div className="mt-3 pt-2.5 border-t border-slate-800/70 text-xs">
+                              <span className="font-semibold text-slate-200">{rev.author}</span>
+                              <span className="text-[11px] text-slate-400 block">{rev.roleOrLocation}</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleReview(rev.id)}
+                              className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                                rev.enabled
+                                  ? "bg-emerald-950 text-emerald-300 border border-emerald-800/80"
+                                  : "bg-slate-800 text-slate-400 border border-slate-700"
+                              }`}
+                            >
+                              {rev.enabled ? "Visible sur l'accueil" : "Masqué"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteReview(rev.id, rev.author)}
+                              className="p-1.5 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                              title="Supprimer cet avis"
+                            >
                               <Trash2 className="size-3.5" />
                             </button>
                           </div>
