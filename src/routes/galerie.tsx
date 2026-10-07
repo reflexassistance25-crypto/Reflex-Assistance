@@ -58,7 +58,7 @@ function Logo({ className = "" }: { className?: string }) {
   );
 }
 
-export default function GaleriePage() {
+function GaleriePage() {
   const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("Tous");
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
