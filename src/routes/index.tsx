@@ -19,10 +19,20 @@ import {
   Sparkles,
   Wrench,
   X,
+  Camera,
+  Image as ImageIcon,
+  ZoomIn,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import logoImg from "@/assets/reflex-assistance-logo.png";
 import { Button } from "@/components/ui/button";
+import {
+  getStoredLogos,
+  getStoredPhotos,
+  subscribeToMediaUpdates,
+  type PartnerLogo,
+  type ShowcasePhoto,
+} from "@/lib/media-store";
 
 // Logo officiel Reflex Assistance
 function Logo({ className = "" }: { className?: string }) {
@@ -63,8 +73,10 @@ const faqs = [
 
 const navLinks = [
   { label: "Accueil", href: "#accueil" },
+  { label: "Marques", href: "#marques" },
   { label: "Services", href: "#services" },
   { label: "Tarifs", href: "#tarifs" },
+  { label: "Galerie", href: "#galerie" },
   { label: "À propos", href: "#apropos" },
   { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
@@ -87,7 +99,24 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logos, setLogos] = useState<PartnerLogo[]>([]);
+  const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [photoFilter, setPhotoFilter] = useState<string>("Tous");
+  const [selectedPhoto, setSelectedPhoto] = useState<ShowcasePhoto | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Synchronisation dynamique avec la médiathèque de l'Admin
+  useEffect(() => {
+    setLogos(getStoredLogos());
+    setPhotos(getStoredPhotos());
+
+    const unsubscribe = subscribeToMediaUpdates(() => {
+      setLogos(getStoredLogos());
+      setPhotos(getStoredPhotos());
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Intersection Observer for reveal animations
   useEffect(() => {
@@ -315,6 +344,66 @@ function Index() {
         </div>
       </section>
 
+      {/* ── SECTION LOGOS & MARQUES PRISES EN CHARGE ── */}
+      {logos.filter((l) => l.enabled).length > 0 && (
+        <section id="marques" className="border-b border-border/80 bg-card/60 py-12 sm:py-16">
+          <div data-reveal className="reveal-section mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+              <p className="eyebrow inline-block">Environnements &amp; Constructeurs</p>
+              <h2 className="mt-3 text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight text-foreground">
+                Toutes les marques &amp; technologies prises en charge
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Interventions certifiées sur PC Windows, Apple Mac, serveurs de stockage NAS et équipements réseau de référence.
+              </p>
+            </div>
+
+            {/* Grille des Logos */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 items-stretch">
+              {logos
+                .filter((l) => l.enabled)
+                .map((logo) => {
+                  const cardContent = (
+                    <div className="group h-full flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-background shadow-xs hover:shadow-md hover:border-brand/50 transition-all duration-300 hover:-translate-y-1">
+                      <div className="h-10 w-full flex items-center justify-center p-1 rounded-lg bg-white/95">
+                        <img
+                          src={logo.imageUrl}
+                          alt={logo.name}
+                          className="max-h-8 max-w-[85%] object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                      <span className="mt-2.5 text-xs font-semibold text-foreground/90 truncate w-full text-center">
+                        {logo.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate w-full text-center">
+                        {logo.category}
+                      </span>
+                    </div>
+                  );
+
+                  return logo.linkUrl ? (
+                    <a
+                      key={logo.id}
+                      href={logo.linkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="no-underline block h-full"
+                      title={`Découvrir ${logo.name}`}
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <div key={logo.id} className="h-full">
+                      {cardContent}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── PROBLEMS ── */}
       <section className="bg-ink px-4 py-16 sm:px-6 sm:py-24 text-ink-foreground md:py-32">
         <div data-reveal className="reveal-section mx-auto max-w-6xl">
@@ -402,6 +491,95 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {/* ── SECTION GALERIE PHOTOS & RÉALISATIONS ── */}
+      {photos.filter((p) => p.enabled).length > 0 && (
+        <section id="galerie" className="bg-background px-4 py-16 sm:px-6 sm:py-24 md:py-32 border-t border-border/70">
+          <div data-reveal className="reveal-section mx-auto max-w-6xl">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 sm:mb-14">
+              <div>
+                <p className="eyebrow inline-flex items-center gap-1.5">
+                  <Camera className="size-3.5" /> Réalisations &amp; Atelier
+                </p>
+                <h2 className="mt-3 text-2xl sm:text-4xl md:text-5xl font-medium leading-tight">
+                  Nos interventions en images.
+                </h2>
+                <p className="mt-3 sm:mt-4 max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+                  Découvrez nos dépannages au quotidien : réparation de circuits, remplacement d'écrans, câblage réseau et récupération de données sensibles.
+                </p>
+              </div>
+
+              {/* Filtres par catégories */}
+              <div className="flex flex-wrap gap-2">
+                {["Tous", ...Array.from(new Set(photos.filter((p) => p.enabled).map((p) => p.category)))].map(
+                  (cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setPhotoFilter(cat)}
+                      className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-all duration-200 ${
+                        photoFilter === cat
+                          ? "bg-ink text-ink-foreground shadow-sm"
+                          : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-mist"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Grille de cartes photos */}
+            <div className="stagger-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {photos
+                .filter((p) => p.enabled)
+                .filter((p) => (photoFilter === "Tous" ? true : p.category === photoFilter))
+                .map((photo) => (
+                  <article
+                    key={photo.id}
+                    onClick={() => setSelectedPhoto(photo)}
+                    className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl border border-border bg-card shadow-panel transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    <div className="relative aspect-video sm:aspect-[4/3] w-full overflow-hidden bg-slate-950">
+                      <img
+                        src={photo.imageUrl}
+                        alt={photo.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                      {/* Badge catégorie */}
+                      <span className="absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-black/60 text-emerald-400 border border-white/20 backdrop-blur-md">
+                        {photo.category}
+                      </span>
+
+                      {/* Loupe au survol */}
+                      <div className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ZoomIn className="size-4" />
+                      </div>
+
+                      {/* Titre et description en bas de l'image */}
+                      <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 text-white">
+                        <h3 className="text-base sm:text-lg font-semibold leading-snug line-clamp-1">
+                          {photo.title}
+                        </h3>
+                        <p className="mt-1 text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed">
+                          {photo.description}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── À PROPOS ── */}
       <section id="apropos" className="bg-soft-green px-4 py-16 sm:px-6 sm:py-24 md:py-32">
@@ -587,6 +765,53 @@ function Index() {
         <MessageCircle className="size-5 shrink-0" />
         <span className="hidden sm:inline">WhatsApp</span>
       </a>
+      {/* ── MODALE LIGHTBOX GALERIE PHOTO ── */}
+      {selectedPhoto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton Fermer */}
+            <button
+              type="button"
+              onClick={() => setSelectedPhoto(null)}
+              aria-label="Fermer la vue agrandie"
+              className="absolute top-4 right-4 z-10 size-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-transform hover:scale-110"
+            >
+              <X className="size-5" />
+            </button>
+
+            {/* Image en grand */}
+            <div className="relative max-h-[65vh] w-full flex items-center justify-center bg-black/50 overflow-hidden">
+              <img
+                src={selectedPhoto.imageUrl}
+                alt={selectedPhoto.title}
+                className="max-h-[65vh] w-auto max-w-full object-contain"
+              />
+            </div>
+
+            {/* Légende détaillée */}
+            <div className="p-6 text-white">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  {selectedPhoto.category}
+                </span>
+                <span className="text-xs text-slate-400">Intervention vérifiée Reflex' Assistance</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-semibold">{selectedPhoto.title}</h3>
+              <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
+                {selectedPhoto.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

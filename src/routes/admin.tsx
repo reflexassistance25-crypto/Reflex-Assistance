@@ -24,6 +24,15 @@ import {
   Sparkles,
   TrendingUp,
   Users,
+  Image as ImageIcon,
+  Camera,
+  Plus,
+  Trash2,
+  Upload,
+  Link2,
+  RotateCcw,
+  AlertCircle,
+  Check,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoImg from "@/assets/reflex-assistance-logo.png";
@@ -34,6 +43,16 @@ import {
   trackEvent,
   type LocalStats,
 } from "@/lib/analytics";
+import {
+  getStoredLogos,
+  saveStoredLogos,
+  getStoredPhotos,
+  saveStoredPhotos,
+  resetMediaToDefaults,
+  processImageFile,
+  type PartnerLogo,
+  type ShowcasePhoto,
+} from "@/lib/media-store";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -46,7 +65,8 @@ export const Route = createFileRoute("/admin")({
 });
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"stats" | "ga" | "seo">("stats");
+  const [activeTab, setActiveTab] = useState<"stats" | "ga" | "seo" | "media">("stats");
+  const [mediaSubTab, setMediaSubTab] = useState<"logos" | "photos">("logos");
   const [gaId, setGaId] = useState("");
   const [savedGaId, setSavedGaId] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -56,12 +76,164 @@ export default function AdminDashboard() {
   const [serpDevice, setSerpDevice] = useState<"mobile" | "desktop">("mobile");
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
+  // ── MÉDIATHÈQUE STATE ──
+  const [logos, setLogos] = useState<PartnerLogo[]>([]);
+  const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [mediaNotification, setMediaNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Form states for Logos
+  const [newLogoName, setNewLogoName] = useState("");
+  const [newLogoUrl, setNewLogoUrl] = useState("");
+  const [newLogoLink, setNewLogoLink] = useState("");
+  const [newLogoCategory, setNewLogoCategory] = useState("Systèmes");
+  const [logoUploadLoading, setLogoUploadLoading] = useState(false);
+
+  // Form states for Photos
+  const [newPhotoTitle, setNewPhotoTitle] = useState("");
+  const [newPhotoDesc, setNewPhotoDesc] = useState("");
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [newPhotoCategory, setNewPhotoCategory] = useState("Atelier & Dépannage");
+  const [photoUploadLoading, setPhotoUploadLoading] = useState(false);
+
   useEffect(() => {
     const currentGaId = getGAMeasurementId();
     setGaId(currentGaId);
     setSavedGaId(currentGaId);
     setStats(getSiteStats());
+    setLogos(getStoredLogos());
+    setPhotos(getStoredPhotos());
   }, []);
+
+  const notifyMedia = (message: string, type: "success" | "error" = "success") => {
+    setMediaNotification({ type, message });
+    setTimeout(() => setMediaNotification(null), 4000);
+  };
+
+  const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setLogoUploadLoading(true);
+      const base64 = await processImageFile(file, 400, 400, 0.9);
+      setNewLogoUrl(base64);
+      notifyMedia("Logo chargé et optimisé avec succès !");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'import";
+      notifyMedia(msg, "error");
+    } finally {
+      setLogoUploadLoading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAddLogo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLogoName.trim()) {
+      notifyMedia("Veuillez saisir le nom de la marque ou du partenaire", "error");
+      return;
+    }
+    if (!newLogoUrl.trim()) {
+      notifyMedia("Veuillez importer une image ou fournir un lien d'image", "error");
+      return;
+    }
+    const newLogo: PartnerLogo = {
+      id: `logo-${Date.now()}`,
+      name: newLogoName.trim(),
+      imageUrl: newLogoUrl.trim(),
+      linkUrl: newLogoLink.trim() || undefined,
+      category: newLogoCategory.trim() || "Marques",
+      enabled: true,
+    };
+    const updated = [newLogo, ...logos];
+    setLogos(updated);
+    saveStoredLogos(updated);
+    setNewLogoName("");
+    setNewLogoUrl("");
+    setNewLogoLink("");
+    notifyMedia(`Logo "${newLogo.name}" ajouté et activé sur le site !`);
+  };
+
+  const handleToggleLogo = (id: string) => {
+    const updated = logos.map((l) => (l.id === id ? { ...l, enabled: !l.enabled } : l));
+    setLogos(updated);
+    saveStoredLogos(updated);
+    notifyMedia("Visibilité du logo mise à jour");
+  };
+
+  const handleDeleteLogo = (id: string, name: string) => {
+    if (!window.confirm(`Supprimer définitivement le logo "${name}" ?`)) return;
+    const updated = logos.filter((l) => l.id !== id);
+    setLogos(updated);
+    saveStoredLogos(updated);
+    notifyMedia(`Logo "${name}" retiré`);
+  };
+
+  const handlePhotoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setPhotoUploadLoading(true);
+      const base64 = await processImageFile(file, 1200, 900, 0.85);
+      setNewPhotoUrl(base64);
+      notifyMedia("Photo chargée et optimisée avec succès !");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'import";
+      notifyMedia(msg, "error");
+    } finally {
+      setPhotoUploadLoading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAddPhoto = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPhotoTitle.trim()) {
+      notifyMedia("Veuillez saisir un titre pour la photo", "error");
+      return;
+    }
+    if (!newPhotoUrl.trim()) {
+      notifyMedia("Veuillez importer une photo ou fournir une URL", "error");
+      return;
+    }
+    const newPhoto: ShowcasePhoto = {
+      id: `photo-${Date.now()}`,
+      title: newPhotoTitle.trim(),
+      description: newPhotoDesc.trim() || "Intervention réalisée par Reflex' Assistance",
+      category: newPhotoCategory.trim() || "Atelier & Dépannage",
+      imageUrl: newPhotoUrl.trim(),
+      enabled: true,
+    };
+    const updated = [newPhoto, ...photos];
+    setPhotos(updated);
+    saveStoredPhotos(updated);
+    setNewPhotoTitle("");
+    setNewPhotoDesc("");
+    setNewPhotoUrl("");
+    notifyMedia(`Photo "${newPhoto.title}" ajoutée à la galerie !`);
+  };
+
+  const handleTogglePhoto = (id: string) => {
+    const updated = photos.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p));
+    setPhotos(updated);
+    saveStoredPhotos(updated);
+    notifyMedia("Visibilité de la photo mise à jour");
+  };
+
+  const handleDeletePhoto = (id: string, title: string) => {
+    if (!window.confirm(`Supprimer définitivement la photo "${title}" ?`)) return;
+    const updated = photos.filter((p) => p.id !== id);
+    setPhotos(updated);
+    saveStoredPhotos(updated);
+    notifyMedia(`Photo "${title}" retirée`);
+  };
+
+  const handleResetMedia = () => {
+    if (!window.confirm("Réinitialiser tous les logos et photos aux valeurs par défaut d'origine ? Vos ajouts personnalisés seront effacés.")) return;
+    resetMediaToDefaults();
+    setLogos(getStoredLogos());
+    setPhotos(getStoredPhotos());
+    notifyMedia("Médias réinitialisés aux valeurs d'origine");
+  };
 
   const handleSaveGa = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +328,19 @@ export default function AdminDashboard() {
             }`}
           >
             <Search className="size-4" /> Référencement &amp; Audit SEO
+          </button>
+          <button
+            onClick={() => setActiveTab("media")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              activeTab === "media"
+                ? "bg-emerald-500 text-slate-950 font-semibold shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <ImageIcon className="size-4" /> Médiathèque (Logos &amp; Photos)
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-emerald-400 border border-slate-700">
+              {logos.length + photos.length}
+            </span>
           </button>
         </div>
       </div>
@@ -642,6 +827,489 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ================= TAB 4: MÉDIATHÈQUE (LOGOS & PHOTOS) ================= */}
+        {activeTab === "media" && (
+          <div className="space-y-8">
+            {/* Header + Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
+                  <ImageIcon className="size-6 text-emerald-400" />
+                  Médiathèque Dynamique (Logos &amp; Photos)
+                </h1>
+                <p className="text-sm text-slate-400 mt-1">
+                  Ajoutez, masquez ou retirez les logos de partenaires et les photos de vos interventions. Les modifications sont répercutées en temps réel sur la page d'accueil.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={handleResetMedia}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg transition-colors"
+                >
+                  <RotateCcw className="size-3.5" /> Réinitialiser par défaut
+                </button>
+              </div>
+            </div>
+
+            {/* Toast Notification */}
+            {mediaNotification && (
+              <div
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${
+                  mediaNotification.type === "success"
+                    ? "bg-emerald-950/70 border-emerald-800 text-emerald-300"
+                    : "bg-red-950/70 border-red-800 text-red-300"
+                }`}
+              >
+                {mediaNotification.type === "success" ? (
+                  <Check className="size-4 shrink-0 text-emerald-400" />
+                ) : (
+                  <AlertCircle className="size-4 shrink-0 text-red-400" />
+                )}
+                <span>{mediaNotification.message}</span>
+              </div>
+            )}
+
+            {/* Subtabs Switcher */}
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+              <button
+                type="button"
+                onClick={() => setMediaSubTab("logos")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  mediaSubTab === "logos"
+                    ? "bg-slate-800 text-white font-semibold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                }`}
+              >
+                <Layers className="size-4 text-emerald-400" />
+                Logos &amp; Marques ({logos.filter((l) => l.enabled).length}/{logos.length} actifs)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaSubTab("photos")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  mediaSubTab === "photos"
+                    ? "bg-slate-800 text-white font-semibold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                }`}
+              >
+                <Camera className="size-4 text-emerald-400" />
+                Galerie Photos &amp; Atelier ({photos.filter((p) => p.enabled).length}/{photos.length} actives)
+              </button>
+            </div>
+
+            {/* ──────── SUBTAB 1 : LOGOS ──────── */}
+            {mediaSubTab === "logos" && (
+              <div className="space-y-6">
+                {/* Formulaire d'ajout de logo */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <Plus className="size-4 text-emerald-400" />
+                    Ajouter un logo de partenaire ou de marque
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Le logo apparaîtra automatiquement dans le bandeau de confiance et la section dédiée sur la page d'accueil.
+                  </p>
+
+                  <form onSubmit={handleAddLogo} className="mt-5 space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Nom de la marque / partenaire *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newLogoName}
+                          onChange={(e) => setNewLogoName(e.target.value)}
+                          placeholder="Ex: Dell, Apple, Cisco..."
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Catégorie
+                        </label>
+                        <select
+                          value={newLogoCategory}
+                          onChange={(e) => setNewLogoCategory(e.target.value)}
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="Systèmes">Systèmes</option>
+                          <option value="Matériel">Matériel</option>
+                          <option value="Réseau & Sauvegarde">Réseau &amp; Sauvegarde</option>
+                          <option value="Composants">Composants</option>
+                          <option value="Partenaires">Partenaires</option>
+                          <option value="Certifications">Certifications</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Lien web optionnel (redirection)
+                        </label>
+                        <div className="relative">
+                          <Link2 className="size-3.5 absolute left-3 top-3.5 text-slate-500" />
+                          <input
+                            type="url"
+                            value={newLogoLink}
+                            onChange={(e) => setNewLogoLink(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full h-10 pl-9 pr-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sélection de l'image (Upload ou URL) */}
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-slate-800/80">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Upload className="size-3.5 text-emerald-400" /> Option A : Importer une image (SVG, PNG, JPG)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoFileUpload}
+                          disabled={logoUploadLoading}
+                          className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          L'image est automatiquement optimisée pour le navigateur.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Link2 className="size-3.5 text-slate-400" /> Option B : Ou coller l'URL directe de l'image
+                        </label>
+                        <input
+                          type="url"
+                          value={newLogoUrl}
+                          onChange={(e) => setNewLogoUrl(e.target.value)}
+                          placeholder="https://.../logo.svg"
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Aperçu en direct */}
+                    {newLogoUrl && (
+                      <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/70 border border-slate-800">
+                        <div className="h-12 w-28 rounded-lg bg-white/95 p-2 flex items-center justify-center shrink-0 shadow-sm">
+                          <img
+                            src={newLogoUrl}
+                            alt="Aperçu logo"
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                        <div className="text-xs">
+                          <p className="font-semibold text-slate-200">Aperçu du logo : {newLogoName || "Sans nom"}</p>
+                          <p className="text-slate-400 text-[11px] truncate max-w-md">{newLogoCategory}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        disabled={logoUploadLoading}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        <Plus className="size-4" /> Enregistrer le logo
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Liste des logos existants */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-200">
+                      Logos enregistrés ({logos.length})
+                    </h3>
+                    <span className="text-xs text-slate-500">
+                      Cliquez sur l'interrupteur pour masquer ou afficher un logo sans le supprimer.
+                    </span>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {logos.map((logo) => (
+                      <div
+                        key={logo.id}
+                        className={`rounded-xl border p-3.5 transition-all flex flex-col justify-between ${
+                          logo.enabled
+                            ? "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                            : "bg-slate-950/50 border-slate-900 opacity-60"
+                        }`}
+                      >
+                        <div>
+                          {/* Conteneur d'image blanc pour lisibilité des logos */}
+                          <div className="h-16 w-full rounded-lg bg-white/95 p-2.5 flex items-center justify-center mb-3 shadow-inner">
+                            <img
+                              src={logo.imageUrl}
+                              alt={logo.name}
+                              className="max-h-full max-w-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/120x60?text=Logo";
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-semibold text-slate-100 truncate">
+                                {logo.name}
+                              </h4>
+                              <span className="inline-block mt-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                                {logo.category}
+                              </span>
+                            </div>
+                            {logo.linkUrl && (
+                              <a
+                                href={logo.linkUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-slate-400 hover:text-emerald-400 p-1"
+                                title="Ouvrir le lien"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLogo(logo.id)}
+                            className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
+                              logo.enabled
+                                ? "bg-emerald-950 text-emerald-300 border border-emerald-800/80"
+                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                            }`}
+                          >
+                            {logo.enabled ? "Visible sur le site" : "Masqué"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLogo(logo.id, logo.name)}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+                            title="Supprimer ce logo"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ──────── SUBTAB 2 : PHOTOS ──────── */}
+            {mediaSubTab === "photos" && (
+              <div className="space-y-6">
+                {/* Formulaire d'ajout de photo */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <Plus className="size-4 text-emerald-400" />
+                    Ajouter une photo d'intervention ou de réalisation
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    La photo apparaîtra dans la section Galerie Photos &amp; Interventions de la page d'accueil avec zoom interactif.
+                  </p>
+
+                  <form onSubmit={handleAddPhoto} className="mt-5 space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Titre de la photo / intervention *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newPhotoTitle}
+                          onChange={(e) => setNewPhotoTitle(e.target.value)}
+                          placeholder="Ex: Remplacement écran iMac & sauvegarde..."
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Catégorie
+                        </label>
+                        <select
+                          value={newPhotoCategory}
+                          onChange={(e) => setNewPhotoCategory(e.target.value)}
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="Atelier & Dépannage">Atelier &amp; Dépannage</option>
+                          <option value="Réseau & Câblage">Réseau &amp; Câblage</option>
+                          <option value="Données & Sécurité">Données &amp; Sécurité</option>
+                          <option value="Sur site & Bureau">Sur site &amp; Bureau</option>
+                          <option value="Équipements">Équipements</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                        Description / Détails de l'intervention
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newPhotoDesc}
+                        onChange={(e) => setNewPhotoDesc(e.target.value)}
+                        placeholder="Ex: Diagnostic approfondi, dépoussiérage et changement pâte thermique..."
+                        className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Sélection de la photo (Upload ou URL) */}
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-slate-800/80">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Upload className="size-3.5 text-emerald-400" /> Option A : Importer votre photo depuis l'appareil
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoFileUpload}
+                          disabled={photoUploadLoading}
+                          className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          La photo est automatiquement redimensionnée et compressée en haute définition.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Link2 className="size-3.5 text-slate-400" /> Option B : Ou coller l'URL directe d'une photo
+                        </label>
+                        <input
+                          type="url"
+                          value={newPhotoUrl}
+                          onChange={(e) => setNewPhotoUrl(e.target.value)}
+                          placeholder="https://images.unsplash.com/... ou URL image"
+                          className="w-full h-10 px-3 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Aperçu en direct */}
+                    {newPhotoUrl && (
+                      <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/70 border border-slate-800">
+                        <img
+                          src={newPhotoUrl}
+                          alt="Aperçu photo"
+                          className="h-20 w-32 object-cover rounded-lg shrink-0 border border-slate-700"
+                        />
+                        <div className="text-xs">
+                          <p className="font-semibold text-slate-200">Aperçu : {newPhotoTitle || "Sans titre"}</p>
+                          <span className="inline-block mt-0.5 text-[10px] bg-slate-800 text-emerald-400 px-2 py-0.5 rounded-full">
+                            {newPhotoCategory}
+                          </span>
+                          <p className="text-slate-400 text-[11px] mt-1 line-clamp-1">{newPhotoDesc}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        disabled={photoUploadLoading}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        <Plus className="size-4" /> Publier la photo
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Liste des photos existantes */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-200">
+                      Photos de la galerie ({photos.length})
+                    </h3>
+                    <span className="text-xs text-slate-500">
+                      Cliquez pour masquer ou supprimer une photo.
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className={`rounded-xl border overflow-hidden transition-all flex flex-col justify-between ${
+                          photo.enabled
+                            ? "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                            : "bg-slate-950/50 border-slate-900 opacity-60"
+                        }`}
+                      >
+                        <div>
+                          <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
+                            <img
+                              src={photo.imageUrl}
+                              alt={photo.title}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80";
+                              }}
+                            />
+                            <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-950/80 text-emerald-400 backdrop-blur border border-slate-800">
+                              {photo.category}
+                            </span>
+                          </div>
+
+                          <div className="p-4">
+                            <h4 className="text-sm font-semibold text-slate-100 line-clamp-1">
+                              {photo.title}
+                            </h4>
+                            <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                              {photo.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 pt-0 flex items-center justify-between border-t border-slate-800/60 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePhoto(photo.id)}
+                            className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
+                              photo.enabled
+                                ? "bg-emerald-950 text-emerald-300 border border-emerald-800/80"
+                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                            }`}
+                          >
+                            {photo.enabled ? "Affichée" : "Masquée"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePhoto(photo.id, photo.title)}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+                            title="Supprimer cette photo"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
