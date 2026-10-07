@@ -18,14 +18,27 @@ export interface ShowcasePhoto {
   enabled: boolean;
 }
 
+export interface ClientReview {
+  id: string;
+  author: string;
+  roleOrLocation: string;
+  rating: number; // 1 à 5
+  title: string;
+  comment: string;
+  date?: string;
+  enabled: boolean;
+}
+
 const STORAGE_KEY_LOGOS = "reflex_media_logos_v1";
 const STORAGE_KEY_PHOTOS = "reflex_media_photos_v1";
+const STORAGE_KEY_REVIEWS = "reflex_media_reviews_v1";
 const STORAGE_KEY_SETTINGS = "reflex_media_settings_v1";
 const MEDIA_EVENT_NAME = "reflex-media-updated";
 
 export interface MediaSettings {
   showLogosSection: boolean;
   showGallerySection: boolean;
+  showReviewsSection: boolean;
   galleryPreviewCount: number; // Nb de photos affichées en aperçu sur la page d'accueil
 }
 
@@ -202,10 +215,68 @@ export function saveStoredPhotos(photos: ShowcasePhoto[]): void {
   }
 }
 
+// ── AVIS CLIENTS PAR DÉFAUT ──
+export const DEFAULT_REVIEWS: ClientReview[] = [
+  {
+    id: "rev-1",
+    author: "Marc D.",
+    roleOrLocation: "Particulier · Nanterre",
+    rating: 5,
+    title: "Intervention claire et efficace",
+    comment: "PC portable bloqué réparé en moins d'une heure à domicile. Explications claires, technicien très professionnel et tarif transparent sans mauvaise surprise.",
+    date: "Il y a 2 semaines",
+    enabled: true,
+  },
+  {
+    id: "rev-2",
+    author: "Sophie L.",
+    roleOrLocation: "Cabinet comptable · Rueil",
+    rating: 5,
+    title: "Conseils adaptés et réactivité",
+    comment: "Sauvegarde sécurisée de nos dossiers professionnels et optimisation de tout notre réseau local. Disponibilité remarquable et grande pédagogie.",
+    date: "Il y a 1 mois",
+    enabled: true,
+  },
+  {
+    id: "rev-3",
+    author: "Karim B.",
+    roleOrLocation: "Particulier · La Défense",
+    rating: 5,
+    title: "Suivi de proximité sans jargon",
+    comment: "Changement de disque pour un SSD rapide et réinstallation complète. Mon ordinateur tourne comme au premier jour. Je recommande les yeux fermés !",
+    date: "Il y a 3 semaines",
+    enabled: true,
+  },
+];
+
+// ── GETTERS & SETTERS REVIEWS ──
+export function getStoredReviews(): ClientReview[] {
+  if (typeof window === "undefined") return DEFAULT_REVIEWS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_REVIEWS);
+    if (!raw) return DEFAULT_REVIEWS;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_REVIEWS;
+  } catch {
+    return DEFAULT_REVIEWS;
+  }
+}
+
+export function saveStoredReviews(reviews: ClientReview[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
+    notifyMediaUpdated();
+  } catch (err) {
+    console.error("Erreur lors de la sauvegarde des avis clients:", err);
+  }
+}
+
 // ── GETTERS & SETTERS SETTINGS (Visibilité des sections) ──
 const DEFAULT_SETTINGS: MediaSettings = {
   showLogosSection: true,
   showGallerySection: true,
+  showReviewsSection: true,
   galleryPreviewCount: 3,
 };
 
@@ -235,6 +306,7 @@ export function resetMediaToDefaults(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY_LOGOS);
   localStorage.removeItem(STORAGE_KEY_PHOTOS);
+  localStorage.removeItem(STORAGE_KEY_REVIEWS);
   localStorage.removeItem(STORAGE_KEY_SETTINGS);
   notifyMediaUpdated();
 }
@@ -248,6 +320,7 @@ export function subscribeToMediaUpdates(callback: () => void): () => void {
     if (
       e.key === STORAGE_KEY_LOGOS ||
       e.key === STORAGE_KEY_PHOTOS ||
+      e.key === STORAGE_KEY_REVIEWS ||
       e.key === STORAGE_KEY_SETTINGS
     ) {
       callback();

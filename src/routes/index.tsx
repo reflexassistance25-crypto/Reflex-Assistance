@@ -75,10 +75,8 @@ const faqs = [
 
 const navLinks = [
   { label: "Accueil", href: "#accueil" },
-  { label: "Marques", href: "#marques" },
   { label: "Services", href: "#services" },
   { label: "Tarifs", href: "#tarifs" },
-  { label: "Galerie", href: "#galerie" },
   { label: "À propos", href: "#apropos" },
   { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
@@ -101,13 +99,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [logos, setLogos] = useState<PartnerLogo[]>([]);
-  const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
-  const [mediaSettings, setMediaSettings] = useState<MediaSettings>({
-    showLogosSection: true,
-    showGallerySection: true,
-    galleryPreviewCount: 3,
-  });
+  const [logos, setLogos] = useState<PartnerLogo[]>(() => getStoredLogos());
+  const [photos, setPhotos] = useState<ShowcasePhoto[]>(() => getStoredPhotos());
+  const [mediaSettings, setMediaSettings] = useState<MediaSettings>(() => getMediaSettings());
   const [photoFilter, setPhotoFilter] = useState<string>("Tous");
   const [selectedPhoto, setSelectedPhoto] = useState<ShowcasePhoto | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -138,9 +132,8 @@ function Index() {
     return true;
   });
 
-  // Intersection Observer for reveal animations
+  // Intersection Observer for reveal animations (re-observes dynamic sections)
   useEffect(() => {
-    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -150,11 +143,24 @@ function Index() {
           }
         });
       },
-      { threshold: 0.12 },
+      { threshold: 0.08, rootMargin: "60px 0px" },
     );
-    elements.forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
-  }, []);
+
+    const observeUnrevealed = () => {
+      const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-visible)"));
+      elements.forEach((element) => observer.observe(element));
+    };
+
+    observeUnrevealed();
+
+    // Sécurité supplémentaire : capture tout rendu différé ou rechargement
+    const timer = setTimeout(observeUnrevealed, 250);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [logos, photos, mediaSettings]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {

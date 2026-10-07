@@ -59,7 +59,7 @@ function Logo({ className = "" }: { className?: string }) {
 }
 
 function GaleriePage() {
-  const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [photos, setPhotos] = useState<ShowcasePhoto[]>(() => getStoredPhotos());
   const [activeCategory, setActiveCategory] = useState<string>("Tous");
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
