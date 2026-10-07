@@ -10,6 +10,7 @@ import {
   Mail,
   MapPin,
   Menu,
+  MessageCircle,
   MonitorCog,
   Phone,
   Printer,
@@ -239,6 +240,11 @@ function Index() {
               <Button asChild size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full bg-ink px-6 font-semibold text-ink-foreground shadow-button hover:bg-ink/85">
                 <a href="tel:+33782275430" className="justify-center">
                   Appeler maintenant <span className="ml-1 flex size-7 items-center justify-center rounded-full bg-card text-ink"><ArrowRight className="size-4" /></span>
+                </a>
+              </Button>
+              <Button asChild size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full bg-[#25D366] px-6 font-semibold text-white shadow-button hover:bg-[#1ebe5d]">
+                <a href="https://wa.me/33782275430" target="_blank" rel="noopener noreferrer" className="justify-center gap-2">
+                  <MessageCircle className="size-5" />WhatsApp
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full border-ink/20 bg-card/70 px-6 font-medium text-ink shadow-none backdrop-blur-md hover:bg-card">
@@ -570,6 +576,17 @@ function Index() {
           </div>
         </div>
       </footer>
+      {/* ── BOUTON WHATSAPP FLOTTANT ── */}
+      <a
+        href="https://wa.me/33782275430"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Nous contacter sur WhatsApp"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-[#25D366] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_4px_24px_rgba(37,211,102,0.45)] transition-all duration-300 hover:scale-105 hover:bg-[#1ebe5d] hover:shadow-[0_6px_32px_rgba(37,211,102,0.55)] sm:px-5"
+      >
+        <MessageCircle className="size-5 shrink-0" />
+        <span className="hidden sm:inline">WhatsApp</span>
+      </a>
     </main>
   );
 }
