@@ -209,53 +209,51 @@ function Index() {
         )}
       </div>
 
-      {/* ── HERO WITH TECHNICIAN BACKGROUND ── */}
-      <section id="accueil" className="relative overflow-hidden px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-36 md:pt-40 bg-slate-950 text-white">
-        {/* Background photo + dark atmospheric tech overlays */}
+      {/* ── HERO WITH BRIGHT DAYLIGHT BACKGROUND ── */}
+      <section id="accueil" className="relative overflow-hidden px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-36 md:pt-40 text-foreground">
+        {/* Image de fond claire et lumineuse */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img
-            src="/bg-technicien.png"
-            alt="Technicien Reflex Assistance intervenant en infrastructure informatique"
-            className="h-full w-full object-cover object-[30%_center] sm:object-[20%_center] opacity-55 sm:opacity-65 scale-x-[-1]"
+            src="/hero-technicien-clair.jpg"
+            alt="Technicien Reflex Assistance dépannage informatique"
+            className="h-full w-full object-cover object-[65%_center] sm:object-[60%_center] scale-x-[-1]"
             loading="eager"
           />
-          {/* Directional gradients for high text contrast on left, revealing technician on right */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/40 sm:from-slate-950/95 sm:via-slate-950/75 sm:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-transparent to-ink" />
-          <div className="absolute -top-32 -left-20 size-96 rounded-full bg-brand/20 blur-3xl" />
-          <div className="absolute top-1/3 right-10 size-80 rounded-full bg-emerald-500/15 blur-3xl" />
+          {/* Overlay blanc léger à gauche pour lisibilité du texte — image reste très visible à droite */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/60 to-white/10 sm:from-white/80 sm:via-white/50 sm:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/20" />
         </div>
 
         <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-[0.95fr_1.05fr] md:gap-8">
           <div className="hero-copy relative z-10">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-300 shadow-sm backdrop-blur-md">
-              <MapPin className="size-3.5 text-emerald-400" />Nanterre &amp; Hauts-de-Seine
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/85 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand shadow-sm backdrop-blur-md">
+              <MapPin className="size-3.5 text-brand" />Nanterre &amp; Hauts-de-Seine
             </p>
-            <h1 className="max-w-xl text-3xl font-semibold leading-[1.08] text-white sm:text-5xl lg:text-[4.5rem]">
+            <h1 className="max-w-xl text-3xl font-semibold leading-[1.08] text-ink sm:text-5xl lg:text-[4.5rem]">
               Dépannage informatique, simplement.
             </h1>
-            <p className="mt-4 sm:mt-6 max-w-lg text-sm sm:text-base leading-relaxed text-slate-200 md:text-lg">
+            <p className="mt-4 sm:mt-6 max-w-lg text-sm sm:text-base leading-relaxed text-muted-foreground md:text-lg">
               Un technicien joignable rapidement pour particuliers et petites entreprises. Intervention à domicile, au bureau ou à distance.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap gap-3">
-              <Button asChild size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full bg-white px-6 font-semibold text-slate-950 shadow-button hover:bg-slate-100 hover:text-slate-950">
+              <Button asChild size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full bg-ink px-6 font-semibold text-ink-foreground shadow-button hover:bg-ink/85">
                 <a href="tel:+33782275430" className="justify-center">
-                  Appeler maintenant <span className="ml-1 flex size-7 items-center justify-center rounded-full bg-slate-900 text-white"><ArrowRight className="size-4" /></span>
+                  Appeler maintenant <span className="ml-1 flex size-7 items-center justify-center rounded-full bg-card text-ink"><ArrowRight className="size-4" /></span>
                 </a>
               </Button>
-              <Button asChild variant="outline" size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full border-white/30 bg-white/10 px-6 font-medium text-white shadow-none backdrop-blur-md hover:bg-white/20 hover:text-white">
+              <Button asChild variant="outline" size="lg" className="action-motion h-12 w-full sm:w-auto rounded-full border-ink/20 bg-card/70 px-6 font-medium text-ink shadow-none backdrop-blur-md hover:bg-card">
                 <a href="#contact" className="justify-center">Devis gratuit</a>
               </Button>
             </div>
-            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-medium text-slate-300">
-              <span className="flex items-center gap-1.5"><Check className="size-4 text-emerald-400" />Prix annoncé avant intervention</span>
-              <span className="flex items-center gap-1.5"><Check className="size-4 text-emerald-400" />À domicile ou à distance</span>
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5"><Check className="size-4 text-brand" />Prix annoncé avant intervention</span>
+              <span className="flex items-center gap-1.5"><Check className="size-4 text-brand" />À domicile ou à distance</span>
             </div>
           </div>
 
-          {/* Visual Cards (adaptées mobile sans débordement) */}
+          {/* Cartes d'assistance flottantes */}
           <div className="hero-visual relative mx-auto h-[320px] sm:h-[390px] md:h-[460px] w-full max-w-[480px] md:max-w-[580px]">
-            <div className="float-card-primary absolute left-0 top-0 w-[88%] sm:w-[85%] rotate-[1.5deg] rounded-2xl sm:rounded-[28px] border border-border/80 bg-card/95 backdrop-blur-xl p-4 sm:p-6 shadow-2xl text-card-foreground">
+            <div className="float-card-primary absolute left-0 top-0 w-[88%] sm:w-[85%] rotate-[1.5deg] rounded-2xl sm:rounded-[28px] border border-border bg-card/95 backdrop-blur-xl p-4 sm:p-6 shadow-panel text-card-foreground">
               <div className="mb-4 sm:mb-6 flex items-center justify-between">
                 <span className="text-xs sm:text-sm font-semibold">Votre assistance</span>
                 <span className="text-[11px] sm:text-xs text-muted-foreground">Diagnostic rapide</span>
@@ -267,7 +265,7 @@ function Index() {
                   { icon: Printer, name: "Périphériques", subtitle: "Installation et prise en main", color: "bg-soft-green" }
                 ].map((item) => (
                   <div key={item.name} className={`service-chip flex items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl ${item.color} p-2.5 sm:p-3.5`}>
-                    <div className="flex size-8 sm:size-10 shrink-0 items-center justify-center rounded-full bg-card">
+                    <div className="flex size-8 sm:size-10 shrink-0 items-center justify-center rounded-full bg-card shadow-sm">
                       <item.icon className="size-4 sm:size-5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -279,7 +277,7 @@ function Index() {
                 ))}
               </div>
             </div>
-            <div className="float-card-secondary absolute bottom-0 right-0 w-[65%] sm:w-[60%] -rotate-[2deg] rounded-2xl sm:rounded-[25px] border border-border/80 bg-card/95 backdrop-blur-xl p-4 sm:p-5 shadow-2xl text-card-foreground">
+            <div className="float-card-secondary absolute bottom-0 right-0 w-[65%] sm:w-[60%] -rotate-[2deg] rounded-2xl sm:rounded-[25px] border border-border bg-card/95 backdrop-blur-xl p-4 sm:p-5 shadow-panel text-card-foreground">
               <div className="mb-4 sm:mb-6 flex items-start justify-between">
                 <div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">Intervention</p>
@@ -302,7 +300,7 @@ function Index() {
         </div>
 
         {/* Trust strip */}
-        <div className="trust-strip relative z-10 mx-auto mt-10 sm:mt-14 flex max-w-5xl flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-3 border-y border-white/15 py-4 sm:py-5 text-xs sm:text-sm md:text-base font-semibold text-slate-300">
+        <div className="trust-strip relative z-10 mx-auto mt-10 sm:mt-14 flex max-w-5xl flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-3 border-y border-border/50 py-4 sm:py-5 text-xs sm:text-sm md:text-base font-semibold text-foreground/70">
           <span className="flex items-center gap-1.5"><Laptop className="size-4 sm:size-5 text-brand" />PC &amp; Mac</span>
           <span className="flex items-center gap-1.5"><HardDrive className="size-4 sm:size-5 text-brand" />Données</span>
           <span className="flex items-center gap-1.5"><Router className="size-4 sm:size-5 text-brand" />Réseau</span>
