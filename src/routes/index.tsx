@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Check,
@@ -29,9 +29,11 @@ import { Button } from "@/components/ui/button";
 import {
   getStoredLogos,
   getStoredPhotos,
+  getMediaSettings,
   subscribeToMediaUpdates,
   type PartnerLogo,
   type ShowcasePhoto,
+  type MediaSettings,
 } from "@/lib/media-store";
 
 // Logo officiel Reflex Assistance
@@ -101,6 +103,11 @@ function Index() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logos, setLogos] = useState<PartnerLogo[]>([]);
   const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [mediaSettings, setMediaSettings] = useState<MediaSettings>({
+    showLogosSection: true,
+    showGallerySection: true,
+    galleryPreviewCount: 3,
+  });
   const [photoFilter, setPhotoFilter] = useState<string>("Tous");
   const [selectedPhoto, setSelectedPhoto] = useState<ShowcasePhoto | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -109,14 +116,27 @@ function Index() {
   useEffect(() => {
     setLogos(getStoredLogos());
     setPhotos(getStoredPhotos());
+    setMediaSettings(getMediaSettings());
 
     const unsubscribe = subscribeToMediaUpdates(() => {
       setLogos(getStoredLogos());
       setPhotos(getStoredPhotos());
+      setMediaSettings(getMediaSettings());
     });
 
     return unsubscribe;
   }, []);
+
+  // Liens de navigation adaptés dynamiquement aux sections visibles
+  const visibleNavLinks = navLinks.filter((link) => {
+    if (link.href === "#marques" && (!mediaSettings.showLogosSection || logos.filter((l) => l.enabled).length === 0)) {
+      return false;
+    }
+    if (link.href === "#galerie" && (!mediaSettings.showGallerySection || photos.filter((p) => p.enabled).length === 0)) {
+      return false;
+    }
+    return true;
+  });
 
   // Intersection Observer for reveal animations
   useEffect(() => {
@@ -177,7 +197,7 @@ function Index() {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex" aria-label="Navigation principale">
-            {navLinks.slice(1).map((link) => (
+            {visibleNavLinks.slice(1).map((link) => (
               <a key={link.href} className="transition-colors hover:text-brand" href={link.href}>{link.label}</a>
             ))}
           </nav>
@@ -214,7 +234,7 @@ function Index() {
             className="fixed inset-x-3 sm:inset-x-4 top-18 sm:top-20 z-40 mx-auto max-w-4xl overflow-hidden rounded-3xl border border-border/80 bg-card/98 shadow-float backdrop-blur-xl md:hidden"
           >
             <ul className="flex flex-col divide-y divide-border/60 py-2">
-              {navLinks.map((link) => (
+              {visibleNavLinks.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
@@ -345,7 +365,7 @@ function Index() {
       </section>
 
       {/* ── SECTION LOGOS & MARQUES PRISES EN CHARGE ── */}
-      {logos.filter((l) => l.enabled).length > 0 && (
+      {mediaSettings.showLogosSection && logos.filter((l) => l.enabled).length > 0 && (
         <section id="marques" className="border-b border-border/80 bg-card/60 py-12 sm:py-16">
           <div data-reveal className="reveal-section mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
@@ -492,50 +512,42 @@ function Index() {
         </div>
       </section>
 
-      {/* ── SECTION GALERIE PHOTOS & RÉALISATIONS ── */}
-      {photos.filter((p) => p.enabled).length > 0 && (
-        <section id="galerie" className="bg-background px-4 py-16 sm:px-6 sm:py-24 md:py-32 border-t border-border/70">
-          <div data-reveal className="reveal-section mx-auto max-w-6xl">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 sm:mb-14">
-              <div>
-                <p className="eyebrow inline-flex items-center gap-1.5">
-                  <Camera className="size-3.5" /> Réalisations &amp; Atelier
-                </p>
-                <h2 className="mt-3 text-2xl sm:text-4xl md:text-5xl font-medium leading-tight">
-                  Nos interventions en images.
-                </h2>
-                <p className="mt-3 sm:mt-4 max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Découvrez nos dépannages au quotidien : réparation de circuits, remplacement d'écrans, câblage réseau et récupération de données sensibles.
-                </p>
+      {/* ── SECTION GALERIE PHOTOS & RÉALISATIONS (APERÇU SUR LA PAGE D'ACCUEIL) ── */}
+      {mediaSettings.showGallerySection && photos.filter((p) => p.enabled).length > 0 && (() => {
+        const activePhotos = photos.filter((p) => p.enabled);
+        const previewCount = mediaSettings.galleryPreviewCount || 3;
+        const previewPhotos = activePhotos.slice(0, previewCount);
+
+        return (
+          <section id="galerie" className="bg-background px-4 py-16 sm:px-6 sm:py-24 md:py-28 border-t border-border/70">
+            <div data-reveal className="reveal-section mx-auto max-w-6xl">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 sm:mb-12">
+                <div>
+                  <p className="eyebrow inline-flex items-center gap-1.5">
+                    <Camera className="size-3.5" /> Réalisations &amp; Atelier
+                  </p>
+                  <h2 className="mt-3 text-2xl sm:text-4xl md:text-5xl font-medium leading-tight">
+                    Nos interventions en images.
+                  </h2>
+                  <p className="mt-3 sm:mt-4 max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+                    Un aperçu de notre travail au quotidien : réparations de circuits, écrans, câblage réseau et récupération de données.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/galerie"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-foreground font-semibold text-xs sm:text-sm shadow-button hover:bg-ink/85 transition-all hover:scale-102"
+                  >
+                    Voir toute la galerie ({activePhotos.length} photos)
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </div>
               </div>
 
-              {/* Filtres par catégories */}
-              <div className="flex flex-wrap gap-2">
-                {["Tous", ...Array.from(new Set(photos.filter((p) => p.enabled).map((p) => p.category)))].map(
-                  (cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setPhotoFilter(cat)}
-                      className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-all duration-200 ${
-                        photoFilter === cat
-                          ? "bg-ink text-ink-foreground shadow-sm"
-                          : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-mist"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Grille de cartes photos */}
-            <div className="stagger-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {photos
-                .filter((p) => p.enabled)
-                .filter((p) => (photoFilter === "Tous" ? true : p.category === photoFilter))
-                .map((photo) => (
+              {/* Grille compacte d'aperçu */}
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {previewPhotos.map((photo) => (
                   <article
                     key={photo.id}
                     onClick={() => setSelectedPhoto(photo)}
@@ -552,7 +564,7 @@ function Index() {
                             "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80";
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
 
                       {/* Badge catégorie */}
                       <span className="absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-black/60 text-emerald-400 border border-white/20 backdrop-blur-md">
@@ -576,10 +588,30 @@ function Index() {
                     </div>
                   </article>
                 ))}
+              </div>
+
+              {/* Bandeau vers la page dédiée */}
+              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <div>
+                  <h4 className="font-semibold text-sm sm:text-base text-foreground">
+                    Envie de voir l'ensemble de nos réalisations ?
+                  </h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    Explorez notre portfolio complet classé par catégories (Mac, PC, Réseau, Sauvegarde...).
+                  </p>
+                </div>
+                <Link
+                  to="/galerie"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand text-brand-foreground font-semibold text-xs sm:text-sm hover:opacity-90 transition-all shrink-0 shadow-sm"
+                >
+                  Accéder à la galerie complète ({activePhotos.length} photos)
+                  <ArrowRight className="size-4" />
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })()}
 
       {/* ── À PROPOS ── */}
       <section id="apropos" className="bg-soft-green px-4 py-16 sm:px-6 sm:py-24 md:py-32">
@@ -797,17 +829,27 @@ function Index() {
             </div>
 
             {/* Légende détaillée */}
-            <div className="p-6 text-white">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {selectedPhoto.category}
-                </span>
-                <span className="text-xs text-slate-400">Intervention vérifiée Reflex' Assistance</span>
+            <div className="p-6 text-white flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="max-w-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    {selectedPhoto.category}
+                  </span>
+                  <span className="text-xs text-slate-400">Intervention vérifiée Reflex' Assistance</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-semibold">{selectedPhoto.title}</h3>
+                <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
+                  {selectedPhoto.description}
+                </p>
               </div>
-              <h3 className="text-xl sm:text-2xl font-semibold">{selectedPhoto.title}</h3>
-              <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-                {selectedPhoto.description}
-              </p>
+
+              <Link
+                to="/galerie"
+                onClick={() => setSelectedPhoto(null)}
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-emerald-400 transition-colors border border-slate-700"
+              >
+                Toute la galerie ({photos.filter((p) => p.enabled).length}) <ArrowRight className="size-3.5" />
+              </Link>
             </div>
           </div>
         </div>

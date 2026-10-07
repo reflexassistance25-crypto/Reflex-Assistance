@@ -33,6 +33,8 @@ import {
   RotateCcw,
   AlertCircle,
   Check,
+  EyeOff,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoImg from "@/assets/reflex-assistance-logo.png";
@@ -50,8 +52,11 @@ import {
   saveStoredPhotos,
   resetMediaToDefaults,
   processImageFile,
+  getMediaSettings,
+  saveMediaSettings,
   type PartnerLogo,
   type ShowcasePhoto,
+  type MediaSettings,
 } from "@/lib/media-store";
 
 export const Route = createFileRoute("/admin")({
@@ -79,6 +84,11 @@ export default function AdminDashboard() {
   // ── MÉDIATHÈQUE STATE ──
   const [logos, setLogos] = useState<PartnerLogo[]>([]);
   const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [mediaSettings, setMediaSettings] = useState<MediaSettings>({
+    showLogosSection: true,
+    showGallerySection: true,
+    galleryPreviewCount: 3,
+  });
   const [mediaNotification, setMediaNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Form states for Logos
@@ -102,6 +112,7 @@ export default function AdminDashboard() {
     setStats(getSiteStats());
     setLogos(getStoredLogos());
     setPhotos(getStoredPhotos());
+    setMediaSettings(getMediaSettings());
   }, []);
 
   const notifyMedia = (message: string, type: "success" | "error" = "success") => {
@@ -232,7 +243,20 @@ export default function AdminDashboard() {
     resetMediaToDefaults();
     setLogos(getStoredLogos());
     setPhotos(getStoredPhotos());
+    setMediaSettings(getMediaSettings());
     notifyMedia("Médias réinitialisés aux valeurs d'origine");
+  };
+
+  const handleToggleSection = (key: keyof MediaSettings, value: boolean | number) => {
+    const updated = { ...mediaSettings, [key]: value };
+    setMediaSettings(updated);
+    saveMediaSettings(updated);
+    const labels: Record<string, string> = {
+      showLogosSection: "Section Logos & Marques",
+      showGallerySection: "Section Galerie Photos",
+      galleryPreviewCount: "Nombre de photos en aperçu",
+    };
+    notifyMedia(`${labels[key] ?? key} mis à jour`);
   };
 
   const handleSaveGa = (e: React.FormEvent) => {
@@ -873,6 +897,141 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* 🎛️ Panneau de Contrôle & Visibilité des Sections sur le Site */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-6 backdrop-blur-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800/80">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <SlidersHorizontal className="size-4 text-emerald-400" />
+                    Affichage &amp; Visibilité des sections sur le site
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Activez ou masquez les sections Logos et Galerie sur la page d'accueil d'un simple clic.
+                  </p>
+                </div>
+                <Link
+                  to="/galerie"
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 rounded-lg hover:bg-emerald-900/60 transition-colors w-fit"
+                >
+                  <ExternalLink className="size-3.5" />
+                  Ouvrir la page dédiée Galerie ↗
+                </Link>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 mt-5">
+                {/* Section Logos */}
+                <div
+                  className={`p-4 rounded-xl border transition-all ${
+                    mediaSettings.showLogosSection
+                      ? "bg-slate-800/40 border-slate-700/80"
+                      : "bg-slate-950/60 border-slate-800/80 opacity-90"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Section 1 · Accueil
+                      </span>
+                      <h3 className="text-sm font-semibold text-white mt-0.5 flex items-center gap-2">
+                        Logos &amp; Marques Partenaires
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Bandeau présentant les logos et constructeurs pris en charge (Apple, Dell, Microsoft...).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSection("showLogosSection", !mediaSettings.showLogosSection)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        mediaSettings.showLogosSection
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
+                          : "bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200"
+                      }`}
+                    >
+                      {mediaSettings.showLogosSection ? (
+                        <>
+                          <Eye className="size-3.5 text-emerald-400" />
+                          Visible sur l'accueil
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="size-3.5 text-slate-400" />
+                          Masqué du site
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section Galerie */}
+                <div
+                  className={`p-4 rounded-xl border transition-all ${
+                    mediaSettings.showGallerySection
+                      ? "bg-slate-800/40 border-slate-700/80"
+                      : "bg-slate-950/60 border-slate-800/80 opacity-90"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Section 2 · Accueil
+                      </span>
+                      <h3 className="text-sm font-semibold text-white mt-0.5 flex items-center gap-2">
+                        Galerie Réalisations (Aperçu)
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Aperçu compact sur la page d'accueil avec redirection vers la page dédiée complète.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSection("showGallerySection", !mediaSettings.showGallerySection)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        mediaSettings.showGallerySection
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
+                          : "bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200"
+                      }`}
+                    >
+                      {mediaSettings.showGallerySection ? (
+                        <>
+                          <Eye className="size-3.5 text-emerald-400" />
+                          Visible sur l'accueil
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="size-3.5 text-slate-400" />
+                          Masqué de l'accueil
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {mediaSettings.showGallerySection && (
+                    <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                      <span className="text-xs text-slate-400">Photos affichées en aperçu :</span>
+                      <div className="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+                        {[3, 4, 6].map((num) => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => handleToggleSection("galleryPreviewCount", num)}
+                            className={`px-2.5 py-0.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                              mediaSettings.galleryPreviewCount === num
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "text-slate-400 hover:text-slate-200"
+                            }`}
+                          >
+                            {num} {num === 3 ? "photos" : ""}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Subtabs Switcher */}
             <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
               <button
@@ -904,6 +1063,24 @@ export default function AdminDashboard() {
             {/* ──────── SUBTAB 1 : LOGOS ──────── */}
             {mediaSubTab === "logos" && (
               <div className="space-y-6">
+                {!mediaSettings.showLogosSection && (
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">
+                    <div className="flex items-center gap-2">
+                      <EyeOff className="size-4 shrink-0 text-amber-400" />
+                      <span>
+                        <strong>Information :</strong> La section Logos &amp; Marques est actuellement <u>masquée</u> sur la page d'accueil.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSection("showLogosSection", true)}
+                      className="underline hover:text-white font-medium shrink-0 cursor-pointer"
+                    >
+                      Afficher sur l'accueil
+                    </button>
+                  </div>
+                )}
+
                 {/* Formulaire d'ajout de logo */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
                   <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
@@ -1116,6 +1293,24 @@ export default function AdminDashboard() {
             {/* ──────── SUBTAB 2 : PHOTOS ──────── */}
             {mediaSubTab === "photos" && (
               <div className="space-y-6">
+                {!mediaSettings.showGallerySection && (
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">
+                    <div className="flex items-center gap-2">
+                      <EyeOff className="size-4 shrink-0 text-amber-400" />
+                      <span>
+                        <strong>Information :</strong> La section Galerie Photos est actuellement <u>masquée</u> sur la page d'accueil (la page dédiée /galerie reste toujours accessible).
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSection("showGallerySection", true)}
+                      className="underline hover:text-white font-medium shrink-0 cursor-pointer"
+                    >
+                      Afficher sur l'accueil
+                    </button>
+                  </div>
+                )}
+
                 {/* Formulaire d'ajout de photo */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
                   <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">

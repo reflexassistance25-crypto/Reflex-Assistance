@@ -20,7 +20,14 @@ export interface ShowcasePhoto {
 
 const STORAGE_KEY_LOGOS = "reflex_media_logos_v1";
 const STORAGE_KEY_PHOTOS = "reflex_media_photos_v1";
+const STORAGE_KEY_SETTINGS = "reflex_media_settings_v1";
 const MEDIA_EVENT_NAME = "reflex-media-updated";
+
+export interface MediaSettings {
+  showLogosSection: boolean;
+  showGallerySection: boolean;
+  galleryPreviewCount: number; // Nb de photos affichées en aperçu sur la page d'accueil
+}
 
 // Logos par défaut (marques et systèmes pris en charge par Reflex' Assistance)
 export const DEFAULT_LOGOS: PartnerLogo[] = [
@@ -195,11 +202,40 @@ export function saveStoredPhotos(photos: ShowcasePhoto[]): void {
   }
 }
 
+// ── GETTERS & SETTERS SETTINGS (Visibilité des sections) ──
+const DEFAULT_SETTINGS: MediaSettings = {
+  showLogosSection: true,
+  showGallerySection: true,
+  galleryPreviewCount: 3,
+};
+
+export function getMediaSettings(): MediaSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    if (!raw) return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export function saveMediaSettings(settings: MediaSettings): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    notifyMediaUpdated();
+  } catch (err) {
+    console.error("Erreur lors de la sauvegarde des paramètres médias:", err);
+  }
+}
+
 // Réinitialiser toutes les données aux valeurs par défaut
 export function resetMediaToDefaults(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY_LOGOS);
   localStorage.removeItem(STORAGE_KEY_PHOTOS);
+  localStorage.removeItem(STORAGE_KEY_SETTINGS);
   notifyMediaUpdated();
 }
 
@@ -209,7 +245,11 @@ export function subscribeToMediaUpdates(callback: () => void): () => void {
 
   const handleCustom = () => callback();
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY_LOGOS || e.key === STORAGE_KEY_PHOTOS) {
+    if (
+      e.key === STORAGE_KEY_LOGOS ||
+      e.key === STORAGE_KEY_PHOTOS ||
+      e.key === STORAGE_KEY_SETTINGS
+    ) {
       callback();
     }
   };
