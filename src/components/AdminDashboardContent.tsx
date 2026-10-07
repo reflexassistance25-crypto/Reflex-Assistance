@@ -31,6 +31,8 @@ import {
   KeyRound,
   Lock,
   RefreshCw,
+  Star,
+  MessageSquareQuote,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import logoImg from "@/assets/reflex-assistance-logo.png";
@@ -44,12 +46,15 @@ import {
   saveStoredLogos,
   getStoredPhotos,
   saveStoredPhotos,
+  getStoredReviews,
+  saveStoredReviews,
   resetMediaToDefaults,
   processImageFile,
   getMediaSettings,
   saveMediaSettings,
   type PartnerLogo,
   type ShowcasePhoto,
+  type ClientReview,
   type MediaSettings,
 } from "@/lib/media-store";
 import { getAdminSlug, getAdminTotpSecret } from "@/lib/admin-auth";
@@ -62,7 +67,7 @@ export function AdminDashboardContent() {
 
 function AdminDashboardInner() {
   const [activeTab, setActiveTab] = useState<"ga" | "seo" | "media" | "security">("ga");
-  const [mediaSubTab, setMediaSubTab] = useState<"logos" | "photos">("logos");
+  const [mediaSubTab, setMediaSubTab] = useState<"logos" | "photos" | "reviews">("logos");
   const [gaId, setGaId] = useState("");
   const [savedGaId, setSavedGaId] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -71,9 +76,11 @@ function AdminDashboardInner() {
 
   const [logos, setLogos] = useState<PartnerLogo[]>([]);
   const [photos, setPhotos] = useState<ShowcasePhoto[]>([]);
+  const [reviews, setReviews] = useState<ClientReview[]>([]);
   const [mediaSettings, setMediaSettings] = useState<MediaSettings>({
     showLogosSection: true,
     showGallerySection: true,
+    showReviewsSection: true,
     galleryPreviewCount: 3,
   });
   const [mediaNotification, setMediaNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -89,6 +96,13 @@ function AdminDashboardInner() {
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [newPhotoCategory, setNewPhotoCategory] = useState("Atelier & Dépannage");
   const [photoUploadLoading, setPhotoUploadLoading] = useState(false);
+
+  // Reviews form inputs
+  const [newReviewAuthor, setNewReviewAuthor] = useState("");
+  const [newReviewRole, setNewReviewRole] = useState("");
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewTitle, setNewReviewTitle] = useState("");
+  const [newReviewComment, setNewReviewComment] = useState("");
 
   // Security
   const [currentPassword, setCurrentPassword] = useState("");
@@ -109,6 +123,7 @@ function AdminDashboardInner() {
     if (!stored) setGAMeasurementId(DEFAULT_GA_ID);
     setLogos(getStoredLogos());
     setPhotos(getStoredPhotos());
+    setReviews(getStoredReviews());
     setMediaSettings(getMediaSettings());
     setAdminSlug(getAdminSlug());
     setTotpSecret(getAdminTotpSecret());

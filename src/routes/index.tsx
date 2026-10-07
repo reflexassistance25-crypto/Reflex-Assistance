@@ -29,10 +29,12 @@ import { Button } from "@/components/ui/button";
 import {
   getStoredLogos,
   getStoredPhotos,
+  getStoredReviews,
   getMediaSettings,
   subscribeToMediaUpdates,
   type PartnerLogo,
   type ShowcasePhoto,
+  type ClientReview,
   type MediaSettings,
 } from "@/lib/media-store";
 
@@ -101,6 +103,7 @@ function Index() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logos, setLogos] = useState<PartnerLogo[]>(() => getStoredLogos());
   const [photos, setPhotos] = useState<ShowcasePhoto[]>(() => getStoredPhotos());
+  const [reviews, setReviews] = useState<ClientReview[]>(() => getStoredReviews());
   const [mediaSettings, setMediaSettings] = useState<MediaSettings>(() => getMediaSettings());
   const [photoFilter, setPhotoFilter] = useState<string>("Tous");
   const [selectedPhoto, setSelectedPhoto] = useState<ShowcasePhoto | null>(null);
@@ -110,11 +113,13 @@ function Index() {
   useEffect(() => {
     setLogos(getStoredLogos());
     setPhotos(getStoredPhotos());
+    setReviews(getStoredReviews());
     setMediaSettings(getMediaSettings());
 
     const unsubscribe = subscribeToMediaUpdates(() => {
       setLogos(getStoredLogos());
       setPhotos(getStoredPhotos());
+      setReviews(getStoredReviews());
       setMediaSettings(getMediaSettings());
     });
 
@@ -160,7 +165,7 @@ function Index() {
       clearTimeout(timer);
       observer.disconnect();
     };
-  }, [logos, photos, mediaSettings]);
+  }, [logos, photos, reviews, mediaSettings]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -645,31 +650,55 @@ function Index() {
         </div>
       </section>
 
-      {/* ── AVIS ── */}
-      <section className="px-4 py-16 sm:px-6 sm:py-24 md:py-32">
-        <div data-reveal className="reveal-section mx-auto max-w-6xl">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="eyebrow">Avis clients</p>
-              <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl md:text-5xl font-medium">Votre confiance compte.</h2>
-            </div>
-            <p className="max-w-sm text-sm sm:text-base leading-relaxed text-muted-foreground">Les témoignages vérifiés de nos clients seront bientôt disponibles ici.</p>
-          </div>
-          <div className="stagger-grid mt-8 sm:mt-12 grid gap-4 sm:gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {["Intervention claire", "Conseils adaptés", "Suivi de proximité"].map((title, index) => (
-              <div key={title} className={`review-card min-h-48 sm:min-h-60 rounded-2xl border border-border p-5 sm:p-7 ${index === 1 ? "bg-highlight" : "bg-card"}`}>
-                <div className="mb-8 sm:mb-12 flex gap-1 text-amber-500">
-                  {Array.from({ length: 5 }).map((_, star) => (
-                    <span key={star} className="text-base sm:text-lg">★</span>
-                  ))}
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold">{title}</h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">Témoignage client à venir.</p>
+      {/* ── AVIS CLIENTS (ADMIN GÉRÉ & ACTIVABLE/DÉSACTIVABLE) ── */}
+      {mediaSettings.showReviewsSection && reviews.filter((r) => r.enabled).length > 0 && (
+        <section id="avis" className="px-4 py-16 sm:px-6 sm:py-24 md:py-32 border-t border-border/60">
+          <div data-reveal className="reveal-section mx-auto max-w-6xl">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div>
+                <p className="eyebrow">Avis clients</p>
+                <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl md:text-5xl font-medium">Votre confiance compte.</h2>
               </div>
-            ))}
+              <p className="max-w-sm text-sm sm:text-base leading-relaxed text-muted-foreground">
+                Témoignages vérifiés de particuliers et professionnels accompagnés par Reflex' Assistance.
+              </p>
+            </div>
+            <div className="stagger-grid mt-8 sm:mt-12 grid gap-4 sm:gap-5 sm:grid-cols-2 md:grid-cols-3">
+              {reviews
+                .filter((r) => r.enabled)
+                .map((review, index) => (
+                  <div
+                    key={review.id}
+                    className={`review-card flex flex-col justify-between min-h-48 sm:min-h-60 rounded-2xl border border-border p-5 sm:p-7 transition-all ${
+                      index === 1 ? "bg-highlight" : "bg-card"
+                    }`}
+                  >
+                    <div>
+                      <div className="mb-4 sm:mb-6 flex items-center justify-between">
+                        <div className="flex gap-1 text-amber-500">
+                          {Array.from({ length: review.rating || 5 }).map((_, star) => (
+                            <span key={star} className="text-base sm:text-lg">★</span>
+                          ))}
+                        </div>
+                        {review.date && (
+                          <span className="text-[11px] font-medium text-muted-foreground">{review.date}</span>
+                        )}
+                      </div>
+                      <h3 className="text-base sm:text-lg font-semibold text-foreground">{review.title}</h3>
+                      <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                        « {review.comment} »
+                      </p>
+                    </div>
+                    <div className="mt-6 pt-3.5 border-t border-border/70 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">{review.author}</span>
+                      <span className="text-[11px] text-muted-foreground">{review.roleOrLocation}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── FAQ ── */}
       <section id="faq" className="bg-ink px-4 py-16 sm:px-6 sm:py-24 text-ink-foreground md:py-32">
