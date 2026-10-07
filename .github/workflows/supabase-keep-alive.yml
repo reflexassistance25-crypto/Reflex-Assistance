@@ -1,0 +1,25 @@
+name: Supabase Database Keep-Alive
+
+on:
+  schedule:
+    # Exécution quotidienne à 04h00 UTC (06h00 heure de Paris)
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Permet de déclencher manuellement le ping depuis l'interface GitHub
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Exécution du ping Keep-Alive Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://xyumknfefhavehnnreyb.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5dW1rbmZlZmhhdmVobm5yZXliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODkxNzUsImV4cCI6MjEwNjk2NTE3NX0.ASYy2VVF0AFq6xBL5T6cuv7i96sPR67V46xdDY2UD6g' }}
+        run: node scripts/supabase-keep-alive.mjs
